@@ -114,20 +114,25 @@ await chrome.tabs.sendMessage(TAB_ID, { type: 'getContextTarget' }, { frameId: 0
 | 2026-08-04 | 同上（ログアウト状態の新規プロファイル） | 開いた先の表示 | ポスト6件とも本文・引用・返信が表示。ログイン画面への転送は0件。年齢制限つきメディアだけは表示されない |
 | 2026-08-05 | macOS / 未パッケージ読み込み / URL判定を `post-url.js` へ移したあとの版 | #1 #4 #5 #10 #11 #18 | **6項目すべて期待どおり。** #1 はエラーも警告も無し（service worker が `importScripts('post-url.js')` を読めている）。#18 はシークレットウィンドウが1枚だけ開き、listener の二重登録は起きていない。#11 は外側のポストが開いた |
 | 2026-08-05 | macOS / **提出用 `dist/postcloak-1.6.1.zip` を展開して読み込み** / main `026f5d1`・v1.6.1（**その後の未コミット差分を当てる前の記録**） | #1 #4 #5 #7b #7c #8b #18 | **7項目すべて期待どおり。** #1 エラーも警告も無し（初期化の印を立てる順序を変えたあと）。#4 右クリック経路に URL の再検証を足しても正しいポストが開く。#7b パーマリンクの上の Shift+Alt は**そのポストを開く**。#7c 画像の上では**ポスト本体**が開き、URLに `/photo/1` は残らない。#8b ポスト外の Shift+Alt では**帯も出ない**（#8 の右クリック経路との違いを実測）。#18 再読み込み後もウィンドウは1枚だけ |
+| 2026-09-14 | macOS / Chrome 153.0.8010.37 / **headless の別インスタンス**（CDP `Extensions.loadUnpacked`・一時プロファイル） / main `3f5a237`・v1.6.1 / **提出ZIP `dist/postcloak-1.6.1-3f5a237ea8c0.zip`（SHA-256 `d10498ff21…`）の展開物** | #1 のうち機械で測れる範囲 | **期待どおり。** 展開物を読み込めた（拡張ID `nabpkpmbdbdbcmojbdiafgkiknobogdn` はパスから計算した値と一致）。service worker が起動し、`importScripts('post-url.js')` が読めている（`PostCloakUrl` ＝ `toPostUrl, ALLOWED_HOSTS`）。`getManifest().version` ＝ `1.6.1`。`chrome.i18n.getMessage('extName')` が返る。右クリックメニュー `open-in-incognito` が登録済み（同じ id の重複が拒否される／未使用 id なら通る対照つき）。service worker の error・warning・例外は **0件**（`Log.entryAdded`・`Runtime.exceptionThrown`・`Runtime.consoleAPICalled` の3経路）。**この0件が測定失敗でないことは、壊した検体3つ（`importScripts` を存在しない名前へ／末尾に `console.error`／末尾に `throw`）が全部鳴ることで確認**。⚠️これは **`chrome://extensions` のエラー欄の目視ではない**ので、#1 は人間の確認が残る |
 
 > #11 の期待する結果は、2026-08-05 の実測を受けて書き直しました。**それ以前は「引用元のポストが開く」と書いていましたが、これは実装が約束していない動きでした。** 引用の箱で分岐しないのは意図的な設計です。
 
 ## まだ確かめていないこと
 
-上の記録はいずれも **base commit `026f5d1` に対するもの**です。版の番号は同じ v1.6.1 のままなので、**版だけでは同じ中身かどうか判別できません**。以下は未コミット差分を当てたあとの状態について、まだ実機で確かめていない項目です。
+**現在の対象（2026-09-14 実測）**: main `3f5a237ea8c0b4b804dad0636621b29273db55d8` ／ 提出ZIP `dist/postcloak-1.6.1-3f5a237ea8c0.zip` ／ SHA-256 `d10498ff218bcbe557b5a84a861601d49a76f183868e38d9e0a0b07a18ee79da`。
 
-- 60秒タイマーの handle の扱い（古いタイマーが新しい handle を消さないこと）
-- リンクを直接開いた回に、控えていた値が消えること（#29）
-- 補助手順そのもの（service worker から `chrome.tabs.query` と `getContextTarget` を呼ぶ流れ）
-- `isTrusted` による合成イベントの除外（#27・#28）
-- AltGraph／AltGr の除外（W3）
-- Windows 実機での W1〜W5
-- コミット後の CI
-- コミット名を含む提出ZIP（`postcloak-<version>-<commit>.zip`）の展開物での通し確認
+ブラウザでの記録のうち 2026-08-05 までのものは **base commit `026f5d1` に対するもの**です。版の番号は同じ v1.6.1 のままなので、**版だけでは同じ中身かどうか判別できません**。以下は、その後の変更（`026f5d1` → `3f5a237`）を当てたあとの状態について、まだ実機で確かめていない項目です。各項目の後ろの【】は 2026-09-14 時点の担当と状態です。
+
+- 60秒タイマーの handle の扱い（古いタイマーが新しい handle を消さないこと）【人間】自動テスト「古い timer が、あとから保存した context を消さない」で通っているが、実機では未確認。ブラウザで測るには #26 が要る
+- リンクを直接開いた回に、控えていた値が消えること（#29）【人間】x.com の実ページと本物の右クリックが要る
+- 補助手順そのもの（service worker から `chrome.tabs.query` と `getContextTarget` を呼ぶ流れ）【人間】前半だけ前進: 2026-09-14 に headless の別インスタンスで service worker のコンソールから `chrome.contextMenus` を叩けることは確認した。ただし `chrome.tabs.query` は**対象タブ（x.com）が要る**ので未確認。ここは変わらず最初に手で1回
+- `isTrusted` による合成イベントの除外（#27・#28）【人間】合成イベントを投げる先が x.com の `article` なので、実ページが要る
+- AltGraph／AltGr の除外（W3）【人間・Windows 実機】
+- Windows 実機での W1〜W5【人間・Windows 実機】
+- コミット後の CI【2026-09-14 確認済み】main `3f5a237` の CI は `test`（ubuntu）・`test-windows` ともに success（2026-08-06T14:29〜14:30Z・`gh api .../check-runs` で確認）
+- コミット名を含む提出ZIP（`postcloak-<version>-<commit>.zip`）の展開物での通し確認【一部確認済み・残りは人間】2026-09-14 に `dist/postcloak-1.6.1-3f5a237ea8c0.zip` を作り直し、展開物が HEAD と10件バイト一致することと、headless Chrome へ読み込めて service worker が無警告で起動することまで確認（上の記録の 2026-09-14 の行）。**x.com 上での通し確認（#2〜#29）は未実施**
 
 いずれも自動テストでは通っていますが、**ブラウザ実機での確認とは別物**です。読み込んだ拡張の版を確かめるときは、版の番号ではなく**対象コミットとZIPの SHA-256** で照合してください。
+
+> 2026-09-14 の機械での確認は、**`chrome://extensions` のエラー欄を人が見たものではありません**（service worker のログを数えたもの）。#1 も含めて、表の記入は実機で行ってください。
