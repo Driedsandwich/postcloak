@@ -57,8 +57,8 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 開発者が管理するバックエンド、解析サービス、広告サービス、外部APIへは送信せず、
 永続的な保存もしません。
 右クリック経路のURLは、そのタブのメモリに置きます。60秒を超えた値は使いません。
-置いたときのタイマーが参照を消し、それより前でも一度使う・別の場所を右クリックする・
-ページを離れると捨てられます。
+置いたときのタイマーが参照を消し、それより前でも一度使う・別の場所を右クリックすると
+捨てられます。X の中で画面を移っても、それだけでは捨てられません（60秒の期限で捨てます）。
 ポストを開くときは、Chrome が表示先である X へ通常の HTTPS ページ要求を行い、X はその
 URLを受け取ります。拡張は、追加の情報・識別子・計測データ・別サーバーへの複製を
 付けません。
@@ -125,7 +125,8 @@ It does not send the data to a developer-controlled backend, analytics service,
 advertising service, or external API, and it does not store it persistently.
 On the right-click path, the URL is held in that tab's memory; a value older than 60
 seconds is not used, a timer clears the reference, and it is discarded earlier if it is
-used, if you right-click elsewhere, or if you navigate away.
+used or if you right-click elsewhere. Moving between screens within X does not discard it
+by itself; the 60-second limit still applies.
 To display the selected post, Chrome performs an ordinary HTTPS navigation to X, and X
 receives that URL. The extension adds no extra payload, identifier, telemetry, or copy
 to another server.
@@ -198,7 +199,7 @@ That is the extension's only function.
 
 - 利用者が右クリックまたは Shift+Alt クリックしたとき、その位置の周辺の DOM を**端末内で読む**
 - そこからポストのURLを**1件だけ**取り出す。URLには投稿者にあたる部分（`/<利用者名>/`）が含まれる
-- 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す・ページを離れる、のいずれかで捨てる
+- 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。X の中で画面を移っても、X はページを読み直さないので、それだけでは捨てない（60秒の期限で捨てる）。content.js に画面の移動を検知する処理は無い
 - **開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送らない**（そのいずれも実装に無い）
 - **永続保存しない**（ディスクにも `chrome.storage` にも書かない）
 - 利用者がポストを開いたときは、Chrome が**表示先である X へ通常の HTTPS ページ要求を行い、X はそのURLを受け取る**。拡張は追加の情報・識別子・計測データ・別サーバーへの複製を付けない
