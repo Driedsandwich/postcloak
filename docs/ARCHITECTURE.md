@@ -65,7 +65,7 @@ flowchart LR
 
 ## 3. ファイルごとの役割
 
-リポジトリで管理しているファイルは 28 個です（`git ls-files` で数えた）。
+リポジトリで管理しているファイルは、この文書を足す前は 28 個、足したあとは 31 個です（`git ls-files` で数えた）。
 「配布」の列は、ストアへ出す ZIP に入るかどうかです（正本は `tools/package-files.txt:9-18`）。
 
 ### 3.1 拡張そのもの（ZIP に入る）
@@ -123,7 +123,7 @@ flowchart LR
 
 ### 4.0 準備：拡張が読み込まれたとき
 
-1. Chrome が `manifest.json` を読み、x.com など4サイトのページを開くたびに、`post-url.js` → `content.js` の順でページへ入れる（`manifest.json:27-42`）。
+1. Chrome が `manifest.json` を読み、x.com など4サイトのページを開くたびに、`post-url.js` → `content.js` の順でページへ入れる（`manifest.json:28-42`）。
    順番が大事で、`content.js` は `post-url.js` が先に入っている前提で書かれている（`content.js:12-22`）。
 2. `content.js` は同じ版が二重に動かないよう、印（`window.__postCloakLoaded`）を見てから始める（`content.js:8-10`、`:24`）。
 3. 画面に出す文言を**読み込みの時点で**控えておく。拡張を更新したあとは文言の仕組みごと消えることがあるため（`content.js:28-50`）。

@@ -16,12 +16,12 @@ PostCloak のコードと文書に出てくる言葉を、プログラムを書�
 | manifest（マニフェスト） | 拡張の設計図にあたるファイル `manifest.json`。名前・版・権限・どのページで何を読むかを書く | `manifest.json` |
 | Manifest V3（MV3） | manifest の書き方の第3版。いまの Chrome 拡張の標準（一般的な説明） | `manifest.json:2` |
 | 版（version） | `1.6.1` のような番号。`manifest.json` と `package.json` で同じ値でなければテストが落ちる。ストアは同じか低い版の再アップロードを受け付けない | `manifest.json:4`、`test/manifest.test.js:112-114`、`STORE_LISTING.md:285` |
-| service worker（サービスワーカー） / background | 拡張の「裏側」で待機している係。ページとは別の場所で動き、右クリックメニューやウィンドウを扱う。このリポジトリでは `background.js` | `manifest.json:16-18`、`background.js:1` |
+| service worker（サービスワーカー） / background | 拡張の「裏側」で待機している係。ページとは別の場所で動き、右クリックメニューやウィンドウを扱う。このリポジトリでは `background.js` | `manifest.json:17-19`、`background.js:1` |
 | content script（コンテンツスクリプト） | 対象のページの中に入って動く係。ページの中身（DOM）を読める。このリポジトリでは `post-url.js` と `content.js` | `manifest.json:28-42` |
 | 入れ直し（再注入） | 拡張を入れる前から開いていたタブへ、content script を後から入れること。Chrome は自動ではやらないので、PostCloak が `reviveContentScript` で行う | `background.js:81-83`、`:114-130` |
 | `importScripts` | service worker が別のファイル（ここでは `post-url.js`）を読み込む命令 | `background.js:7` |
-| 権限（permissions） | 拡張が使える Chrome の機能の許可。PostCloak は `contextMenus`（右クリックメニュー）と `scripting`（入れ直し）の2つだけ | `manifest.json:6-9`、`test/manifest.test.js:124-129` |
-| ホスト権限（host_permissions） | 拡張が手を出してよいサイトの範囲。PostCloak は x.com・www.x.com・twitter.com・www.twitter.com の4つの完全一致 | `manifest.json:10-15`、`test/manifest.test.js:131-140` |
+| 権限（permissions） | 拡張が使える Chrome の機能の許可。PostCloak は `contextMenus`（右クリックメニュー）と `scripting`（入れ直し）の2つだけ | `manifest.json:7-10`、`test/manifest.test.js:124-129` |
+| ホスト権限（host_permissions） | 拡張が手を出してよいサイトの範囲。PostCloak は x.com・www.x.com・twitter.com・www.twitter.com の4つの完全一致 | `manifest.json:11-16`、`test/manifest.test.js:131-140` |
 | `<all_urls>` / ワイルドカード | 「すべてのサイト」「〜で始まる全部」のような広い指定。PostCloak は使わず、テストで禁じている | `test/manifest.test.js:142-155` |
 | contextMenus / 右クリックメニュー | 右クリックで出る項目の一覧。PostCloak は項目を1つ足す | `background.js:33-42` |
 | `documentUrlPatterns` | 右クリックメニューの項目を出すページの範囲。右クリックした「フレーム」のURLで判定される | `background.js:11-22`、`:39` |
