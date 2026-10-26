@@ -48,6 +48,37 @@ function makeArticle(href) {
   return article;
 }
 
+// <article> の中に、文書順に並んだ複数のリンクを置く。links は { href, time } の配列で、
+// time が true のリンクだけが <time> を包む。content.js が投げる2種類のセレクタに、
+// 本物の querySelector と同じく「文書順で最初に当たったもの」を返す。
+// makeArticle は selector に time が含まれれば常に time を返すので、
+// パーマリンクの優先順位（<time> を包むリンクを先に見る）を見分けられない。
+function makeArticleWithLinks(links) {
+  const article = makeEl('article');
+  const els = links.map(({ href, time }) => {
+    const a = makeEl('a');
+    a.setAttribute('href', href);
+    a.parentElement = article;
+    if (time) {
+      const t = makeEl('time');
+      t.parentElement = a;
+      t.closest = (sel) => (sel === 'a' ? a : null);
+      a._time = t;
+    }
+    return a;
+  });
+  const isStatus = (a) => a.getAttribute('href').includes('/status/');
+  article.querySelector = (selector) => {
+    if (selector === 'a[href*="/status/"] time') {
+      const a = els.find((el) => isStatus(el) && el._time);
+      return a ? a._time : null;
+    }
+    if (selector === 'a[href*="/status/"]') return els.find(isStatus) || null;
+    throw new Error(`偽 DOM が知らないセレクタ: ${selector}`);
+  };
+  return article;
+}
+
 // 本物の DOM と同じく、呼び出しの途中で外された listener は（まだ呼ばれていなければ）呼ばない。
 function dispatch(domListeners, type, event) {
   for (const l of [...domListeners]) {
@@ -249,6 +280,39 @@ test('派生ページのパーマリンクでもポスト本体へ戻す', () =>
   h.load();
   h.fire('contextmenu', { target: h.postElement('/alice/status/123/photo/1') });
   assert.equal(h.ask({ type: 'getContextTarget' }).url, 'https://x.com/alice/status/123');
+});
+
+test('パーマリンクは、文書順で先に来る /analytics のリンクより <time> を包むリンクを選ぶ', () => {
+  // 先頭のリンクは別のポスト（引用元など）の /analytics。同じポストの /analytics だと
+  // 派生ページとして本体へ戻され、どちらを選んでも同じ URL になって見分けられない。
+  const h = harness();
+  h.load();
+  const article = makeArticleWithLinks([
+    { href: '/bob/status/999/analytics' },
+    { href: '/alice/status/123', time: true },
+  ]);
+  article.parentElement = h.html;
+  const span = makeEl('span');
+  span.parentElement = article;
+
+  h.fire('contextmenu', { target: span });
+  assert.equal(h.ask({ type: 'getContextTarget' }).url, 'https://x.com/alice/status/123');
+});
+
+test('<time> を包むリンクが無ければ、文書順で最初の /status/ リンクを採る', () => {
+  const h = harness();
+  h.load();
+  const article = makeArticleWithLinks([
+    { href: '/alice' },
+    { href: '/bob/status/999' },
+    { href: '/carol/status/1' },
+  ]);
+  article.parentElement = h.html;
+  const span = makeEl('span');
+  span.parentElement = article;
+
+  h.fire('contextmenu', { target: span });
+  assert.equal(h.ask({ type: 'getContextTarget' }).url, 'https://x.com/bob/status/999');
 });
 
 test('一度渡したURLは捨てられ、二度目は返さない', () => {
