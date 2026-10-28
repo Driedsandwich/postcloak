@@ -22,7 +22,7 @@ PostCloak のコードと文書に出てくる言葉を、プログラムを書�
 | `importScripts` | service worker が別のファイル（ここでは `post-url.js`）を読み込む命令 | `background.js:7` |
 | 権限（permissions） | 拡張が使える Chrome の機能の許可。PostCloak は `contextMenus`（右クリックメニュー）と `scripting`（入れ直し）の2つだけ | `manifest.json:7-10`、`test/manifest.test.js:124-129` |
 | ホスト権限（host_permissions） | 拡張が手を出してよいサイトの範囲。PostCloak は x.com・www.x.com・twitter.com・www.twitter.com の4つの完全一致 | `manifest.json:11-16`、`test/manifest.test.js:131-140` |
-| `<all_urls>` / ワイルドカード | 「すべてのサイト」「〜で始まる全部」のような広い指定。PostCloak は使わず、テストで禁じている | `test/manifest.test.js:142-155` |
+| `<all_urls>` / ワイルドカード | `<all_urls>`（すべてのサイト）や、スキーム・ホストを `*` にする指定（`*://…`、`https://*.x.com/…` など）のような広い指定。PostCloak はこれらを使わず、テストで禁じている。経路（パス）の `/*`（そのサイトのどのページでも）は使っている | `test/manifest.test.js:142-155`、`manifest.json:11-16`、`:30-35` |
 | contextMenus / 右クリックメニュー | 右クリックで出る項目の一覧。PostCloak は項目を1つ足す | `background.js:33-42` |
 | `documentUrlPatterns` | 右クリックメニューの項目を出すページの範囲。右クリックした「フレーム」のURLで判定される | `background.js:11-22`、`:39` |
 | `contexts` | 右クリックメニューの項目を、ページ・選択文字・リンク・画像などのどこで出すか。`all` は拡張アイコンのメニューまで含むので使わない | `background.js:26-29` |

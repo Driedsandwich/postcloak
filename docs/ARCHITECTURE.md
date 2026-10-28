@@ -32,7 +32,7 @@ PostCloak は、利用者が触った場所から**そのポストのURLを割�
 flowchart LR
   subgraph PAGE["x.com のタブ（ページの中）"]
     USER(["利用者の操作<br/>右クリック / Shift+Alt クリック"])
-    CS["content.js<br/>触った場所からポストのURLを割り出す<br/>右クリックの結果を60秒だけ控える<br/>失敗したら画面下に帯を出す"]
+    CS["content.js<br/>触った場所からポストのURLを割り出す<br/>右クリックの結果を控える<br/>（60秒を超えた値は使わない。消すのはタイマーが動いた時）<br/>失敗したら画面下に帯を出す"]
     PU1["post-url.js<br/>URLの判定と正規化"]
   end
 
@@ -139,7 +139,7 @@ sequenceDiagram
   participant B as background.js（裏側）
   participant W as シークレットウィンドウ
   U->>C: ポストの上で右クリック
-  C->>C: 祖先をたどってポストのURLを割り出し、60秒だけ控える
+  C->>C: 祖先をたどってポストのURLを割り出して控える（60秒を超えた値は使わない。消すのはタイマーが動いた時）
   U->>B: メニューの項目を押す
   alt 右クリックした所が、それ自体ポストのリンク
     B-)C: clearContextTarget（控えを消して。返事は待たない）
