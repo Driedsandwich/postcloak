@@ -15,6 +15,13 @@ const vm = require('node:vm');
 const ROOT = path.join(__dirname, '..');
 const PARSER_SRC = fs.readFileSync(path.join(ROOT, 'post-url.js'), 'utf8');
 const CONTENT_SRC = fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8');
+// 古い側が自分の listener を外す直しより前の content.js（main の 646cca1 と同じ中身）。
+// その版から更新したタブの動きを確かめるために使う。
+// 名前を .js で終えないのは、test/ の下の .js を Node がテストとして走らせるため。
+const CONTENT_BEFORE_FIX_SRC = fs.readFileSync(
+  path.join(__dirname, 'fixtures', 'content-before-reconnect-fix.js.txt'),
+  'utf8'
+);
 
 function makeEl(tag) {
   return {
@@ -89,7 +96,9 @@ function dispatch(domListeners, type, event) {
 // shareWith に別の harness を渡すと、その文書（DOM と listener の一覧）を共有し、
 // chrome と JS の大域は別に持つ文脈を作る。拡張を更新したあとの既存タブで、
 // 古い版と入れ直した新しい版が同じ文書に併存する場面を作るため。
-function harness({ version = '9.9.9', shareWith } = {}) {
+//
+// contentSrc に別の content.js の中身を渡すと、それを読み込む（古い版の再現用）。
+function harness({ version = '9.9.9', shareWith, contentSrc = CONTENT_SRC } = {}) {
   const runtimeListeners = [];
   const sent = [];
 
@@ -194,7 +203,7 @@ function harness({ version = '9.9.9', shareWith } = {}) {
       vm.runInContext(PARSER_SRC, ctx, { filename: 'post-url.js' });
     },
     loadContent() {
-      vm.runInContext(CONTENT_SRC, ctx, { filename: 'content.js' });
+      vm.runInContext(contentSrc, ctx, { filename: 'content.js' });
     },
     // 実ブラウザのイベントは isTrusted が true。既定でそれに合わせ、
     // 合成イベントのテストだけ明示的に false を渡す。
@@ -603,8 +612,8 @@ test('文脈を失ったあとの Shift+Alt クリックでも、帯が出る', 
 // 新しい版を入れ直す（reviveContentScript）。文書は共有され、chrome と JS の大域は別。
 // 古い版の listener が残っていると、1回の Shift+Alt クリックで新しい版がポストを開き、
 // 同時に古い版が「拡張とつながっていません」の帯を出してしまう。
-function updatedTab() {
-  const oldH = harness({ version: '9.9.9' });
+function updatedTab(oldSrc = CONTENT_SRC) {
+  const oldH = harness({ version: '9.9.9', contentSrc: oldSrc });
   oldH.load();
   breakExtensionContext(oldH);
   const newH = harness({ version: '9.9.10', shareWith: oldH });
@@ -632,6 +641,50 @@ test('新しい版が入ると、文脈を失った古い版は自分の listene
   const alone = harness();
   alone.load();
   assert.equal(newH.domListeners.length, alone.domListeners.length, '古い版の listener が残っている');
+});
+
+// 古い側が listener を外す作りは、古い側のコードにある。だから、この直しより前の版
+// （main の content.js）から更新した最初の1回は、古い版が listener を残したままになり、
+// 開くのと同時に帯も出る。そのタブを読み直すまで続く。README と STORE_LISTING.md に
+// 書いた「最初の1回は読み直しが要る」は、この2つのテストが期待値として確かめている。
+test('直す前の版から更新したタブでは、読み直すまで開くのと同時に帯も出て、古い版の listener が残る', () => {
+  const { oldH, newH } = updatedTab(CONTENT_BEFORE_FIX_SRC);
+
+  const prevented = shiftAltClick(newH, newH.postElement('/alice/status/1'));
+
+  // 新しい版はポストを開く
+  assert.equal(newH.sent.length, 1, '新しい版が background へ渡していない');
+  assert.equal(newH.sent[0].type, 'open');
+  assert.equal(newH.sent[0].url, 'https://x.com/alice/status/1');
+  assert.equal(prevented, true);
+  assert.equal(oldH.sent.length, 0);
+  // 古い版は送れずに「つながっていません」の帯を出す（文書は共有なので created も共有）
+  const toast = newH.created.find((el) => el.tagName === 'DIV');
+  assert.ok(toast, '古い版が帯を出していない（前提が変わった）');
+  assert.equal(toast.textContent, 'msg:errorDisconnected');
+  // 古い版の listener は外れずに残る＝古い版と新しい版を別々に読み込んだ本数の和
+  const oldAlone = harness({ contentSrc: CONTENT_BEFORE_FIX_SRC });
+  oldAlone.load();
+  const newAlone = harness();
+  newAlone.load();
+  assert.equal(
+    newH.domListeners.length,
+    oldAlone.domListeners.length + newAlone.domListeners.length,
+    '古い版の listener が外れている（前提が変わった）'
+  );
+});
+
+test('直す前の版から更新したタブも、読み直したあとは帯を出さずに開く', () => {
+  // 読み直すと文書が作り直され、manifest の content_scripts で新しい版だけが入る。
+  const reloaded = harness({ version: '9.9.10' });
+  reloaded.load();
+
+  shiftAltClick(reloaded, reloaded.postElement('/alice/status/1'));
+
+  assert.equal(reloaded.sent.length, 1);
+  assert.equal(reloaded.sent[0].type, 'open');
+  const toast = reloaded.created.find((el) => el.tagName === 'DIV');
+  assert.equal(toast, undefined, `読み直したのに帯が出た: ${toast && toast.textContent}`);
 });
 
 test('送れずに文脈を失ったと分かった版は、帯を出したうえで listener を外す', () => {

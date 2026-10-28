@@ -47,6 +47,9 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 　切替に割り当てられていることがあります。その構成で Shift+Alt クリックすると、
 　ポストを開く操作と同時に入力言語が切り替わる場合があります。
 　この割り当ては Windows 側の設定によるもので、この拡張が原因ではありません。
+・古い版から更新したときは、更新前から開いていた x.com のタブで Shift+Alt クリックすると、
+　ポストが開くのと同時に「拡張とつながっていません」の案内も出ることがあります。
+　そのタブを一度読み直すと出なくなります（読み直しが要るのは、この更新の最初の1回だけです）
 　設定画面の名称と場所は Windows の版・表示言語によって異なります。
 　右クリックメニューはこのショートカット競合の影響を受けません
 
@@ -58,7 +61,8 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 永続的な保存もしません。
 右クリック経路のURLは、そのタブのメモリに置きます。60秒を超えた値は使いません。
 置いたときのタイマーが参照を消し、それより前でも一度使う・別の場所を右クリックすると
-捨てられます。X の中で画面を移っても、それだけでは捨てられません（60秒の期限で捨てます）。
+捨てられます。X の中で画面を移っても、それだけでは捨てられません（そのときも、60秒を
+超えた値は使わず、タイマーが動いた時点で参照を消します）。
 ポストを開くときは、Chrome が表示先である X へ通常の HTTPS ページ要求を行い、X はその
 URLを受け取ります。拡張は、追加の情報・識別子・計測データ・別サーバーへの複製を
 付けません。
@@ -112,6 +116,9 @@ pro.x.com (X Pro) has a different layout and is out of scope.
   the operating system's language switch. That assignment comes from Windows, not from
   this extension. The setting name and location vary by Windows version and display
   language. The right-click menu is unaffected by this shortcut conflict.
+- After updating from an older version, a Shift+Alt click in an x.com tab that was
+  already open may open the post and also show "Lost the connection to the extension".
+  Reload that tab once and it stops (this is needed only for this first update).
 - Holding AltGr while clicking does nothing. On many Windows layouts AltGr arrives as
   Ctrl+Alt; the extension also checks the AltGraph modifier directly, so it stays quiet
   while you type special characters.
@@ -199,7 +206,7 @@ That is the extension's only function.
 
 - 利用者が右クリックまたは Shift+Alt クリックしたとき、その位置の周辺の DOM を**端末内で読む**
 - そこからポストのURLを**1件だけ**取り出す。URLには投稿者にあたる部分（`/<利用者名>/`）が含まれる
-- 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。content.js に画面の移動を検知する処理は無いので、X の中で画面を移っても、それだけでは捨てない（60秒の期限で捨てる）
+- 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。content.js に画面の移動を検知する処理は無いので、X の中で画面を移っても、それだけでは捨てない（そのときも、60秒を超えた値は使わず、タイマーが動いた時点で参照を消す）
 - **開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送らない**（そのいずれも実装に無い）
 - **永続保存しない**（ディスクにも `chrome.storage` にも書かない）
 - 利用者がポストを開いたときは、Chrome が**表示先である X へ通常の HTTPS ページ要求を行い、X はそのURLを受け取る**。拡張は追加の情報・識別子・計測データ・別サーバーへの複製を付けない
