@@ -15,6 +15,13 @@ const vm = require('node:vm');
 const ROOT = path.join(__dirname, '..');
 const PARSER_SRC = fs.readFileSync(path.join(ROOT, 'post-url.js'), 'utf8');
 const CONTENT_SRC = fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8');
+// 古い側が自分の listener を外す直しより前の content.js（main の 646cca1 と同じ中身）。
+// その版から更新したタブの動きを確かめるために使う。
+// 名前を .js で終えないのは、test/ の下の .js を Node がテストとして走らせるため。
+const CONTENT_BEFORE_FIX_SRC = fs.readFileSync(
+  path.join(__dirname, 'fixtures', 'content-before-reconnect-fix.js.txt'),
+  'utf8'
+);
 
 function makeEl(tag) {
   return {
@@ -48,36 +55,97 @@ function makeArticle(href) {
   return article;
 }
 
-function harness() {
-  const created = [];
-  const domListeners = [];
+// <article> の中に、文書順に並んだ複数のリンクを置く。links は { href, time } の配列で、
+// time が true のリンクだけが <time> を包む。content.js が投げる2種類のセレクタに、
+// 本物の querySelector と同じく「文書順で最初に当たったもの」を返す。
+// makeArticle は selector に time が含まれれば常に time を返すので、
+// パーマリンクの優先順位（<time> を包むリンクを先に見る）を見分けられない。
+function makeArticleWithLinks(links) {
+  const article = makeEl('article');
+  const els = links.map(({ href, time }) => {
+    const a = makeEl('a');
+    a.setAttribute('href', href);
+    a.parentElement = article;
+    if (time) {
+      const t = makeEl('time');
+      t.parentElement = a;
+      t.closest = (sel) => (sel === 'a' ? a : null);
+      a._time = t;
+    }
+    return a;
+  });
+  const isStatus = (a) => a.getAttribute('href').includes('/status/');
+  article.querySelector = (selector) => {
+    if (selector === 'a[href*="/status/"] time') {
+      const a = els.find((el) => isStatus(el) && el._time);
+      return a ? a._time : null;
+    }
+    if (selector === 'a[href*="/status/"]') return els.find(isStatus) || null;
+    throw new Error(`偽 DOM が知らないセレクタ: ${selector}`);
+  };
+  return article;
+}
+
+// 本物の DOM と同じく、呼び出しの途中で外された listener は（まだ呼ばれていなければ）呼ばない。
+function dispatch(domListeners, type, event) {
+  for (const l of [...domListeners]) {
+    if (l.type === type && domListeners.includes(l)) l.fn(event);
+  }
+}
+
+// shareWith に別の harness を渡すと、その文書（DOM と listener の一覧）を共有し、
+// chrome と JS の大域は別に持つ文脈を作る。拡張を更新したあとの既存タブで、
+// 古い版と入れ直した新しい版が同じ文書に併存する場面を作るため。
+//
+// contentSrc に別の content.js の中身を渡すと、それを読み込む（古い版の再現用）。
+function harness({ version = '9.9.9', shareWith, contentSrc = CONTENT_SRC } = {}) {
   const runtimeListeners = [];
   const sent = [];
 
-  const html = makeEl('html');
-  const body = makeEl('body');
-  body.parentElement = html;
-  body.appendChild = (el) => {
-    el.isConnected = true;
-    return el;
-  };
-
-  const document = {
-    documentElement: html,
-    body,
-    createElement(tag) {
-      const el = makeEl(tag);
-      created.push(el);
+  let created, domListeners, html, document;
+  if (shareWith) {
+    ({ created, domListeners, html } = shareWith);
+    document = shareWith.sandbox.document;
+  } else {
+    created = [];
+    domListeners = [];
+    html = makeEl('html');
+    const body = makeEl('body');
+    body.parentElement = html;
+    body.appendChild = (el) => {
+      el.isConnected = true;
       return el;
-    },
-    addEventListener(type, fn, capture) {
-      domListeners.push({ type, fn, capture });
-    },
-  };
+    };
+
+    document = {
+      documentElement: html,
+      body,
+      createElement(tag) {
+        const el = makeEl(tag);
+        created.push(el);
+        return el;
+      },
+      addEventListener(type, fn, capture) {
+        domListeners.push({ type, fn, capture: Boolean(capture) });
+      },
+      removeEventListener(type, fn, capture) {
+        const i = domListeners.findIndex(
+          (l) => l.type === type && l.fn === fn && l.capture === Boolean(capture)
+        );
+        if (i !== -1) domListeners.splice(i, 1);
+      },
+      // 登録順にその場で呼ぶ（本物の dispatchEvent も同期）
+      dispatchEvent(event) {
+        dispatch(domListeners, event.type, event);
+        return true;
+      },
+    };
+  }
 
   const chrome = {
     runtime: {
-      getManifest: () => ({ version: '9.9.9' }),
+      id: 'postcloak-test-id',
+      getManifest: () => ({ version }),
       onMessage: {
         addListener(fn) {
           runtimeListeners.push(fn);
@@ -103,6 +171,7 @@ function harness() {
     location: { href: 'https://x.com/home' },
     Node: { TEXT_NODE: 3 },
     URL,
+    Event,
     Date: { now: () => clock },
     setTimeout: (fn, ms) => {
       const id = nextTimerId++;
@@ -134,15 +203,14 @@ function harness() {
       vm.runInContext(PARSER_SRC, ctx, { filename: 'post-url.js' });
     },
     loadContent() {
-      vm.runInContext(CONTENT_SRC, ctx, { filename: 'content.js' });
+      vm.runInContext(contentSrc, ctx, { filename: 'content.js' });
     },
     // 実ブラウザのイベントは isTrusted が true。既定でそれに合わせ、
     // 合成イベントのテストだけ明示的に false を渡す。
     // event に渡した値はそのまま載るので、getModifierState のような関数も
     // 場面ごとに差し替えられる（AltGr の判定を撃つため）。
     fire(type, event) {
-      const e = { isTrusted: true, ...event };
-      for (const l of domListeners) if (l.type === type) l.fn(e);
+      dispatch(domListeners, type, { isTrusted: true, ...event });
     },
     // 時計を進める（timer は自動では動かない）
     advance(ms) {
@@ -202,7 +270,7 @@ test('同じ版を2回読み込んでも、登録される listener は1組だ�
   assert.equal(h.domListeners.length, afterFirst.dom, 'DOM の listener が増えた');
   assert.equal(h.runtimeListeners.length, afterFirst.runtime, 'runtime の listener が増えた');
   // 対照: そもそも1回目で登録されていなければ、この検査は何も見ていない
-  assert.equal(afterFirst.dom, 2, 'contextmenu と click の2本が登録されていない');
+  assert.equal(afterFirst.dom, 3, 'contextmenu・click・入れ直しの知らせの3本が登録されていない');
   assert.equal(afterFirst.runtime, 1);
 });
 
@@ -221,6 +289,39 @@ test('派生ページのパーマリンクでもポスト本体へ戻す', () =>
   h.load();
   h.fire('contextmenu', { target: h.postElement('/alice/status/123/photo/1') });
   assert.equal(h.ask({ type: 'getContextTarget' }).url, 'https://x.com/alice/status/123');
+});
+
+test('パーマリンクは、文書順で先に来る /analytics のリンクより <time> を包むリンクを選ぶ', () => {
+  // 先頭のリンクは別のポスト（引用元など）の /analytics。同じポストの /analytics だと
+  // 派生ページとして本体へ戻され、どちらを選んでも同じ URL になって見分けられない。
+  const h = harness();
+  h.load();
+  const article = makeArticleWithLinks([
+    { href: '/bob/status/999/analytics' },
+    { href: '/alice/status/123', time: true },
+  ]);
+  article.parentElement = h.html;
+  const span = makeEl('span');
+  span.parentElement = article;
+
+  h.fire('contextmenu', { target: span });
+  assert.equal(h.ask({ type: 'getContextTarget' }).url, 'https://x.com/alice/status/123');
+});
+
+test('<time> を包むリンクが無ければ、文書順で最初の /status/ リンクを採る', () => {
+  const h = harness();
+  h.load();
+  const article = makeArticleWithLinks([
+    { href: '/alice' },
+    { href: '/bob/status/999' },
+    { href: '/carol/status/1' },
+  ]);
+  article.parentElement = h.html;
+  const span = makeEl('span');
+  span.parentElement = article;
+
+  h.fire('contextmenu', { target: span });
+  assert.equal(h.ask({ type: 'getContextTarget' }).url, 'https://x.com/bob/status/999');
 });
 
 test('一度渡したURLは捨てられ、二度目は返さない', () => {
@@ -482,8 +583,10 @@ test('一度渡したら timer も解除される', () => {
 // 「利用者に知らせる」ための処理自体が例外で落ちて、帯が出ないまま終わっていた。
 
 function breakExtensionContext(h) {
-  // 文脈を失った状態を作る。chrome.i18n が消え、sendMessage は例外を投げる。
+  // 文脈を失った状態を作る。chrome.i18n が消え、runtime.id も消え、
+  // sendMessage は例外を投げる。
   h.sandbox.chrome.i18n = undefined;
+  h.sandbox.chrome.runtime.id = undefined;
   h.sandbox.chrome.runtime.sendMessage = () => {
     throw new Error('Extension context invalidated.');
   };
@@ -503,6 +606,123 @@ test('文脈を失ったあとの Shift+Alt クリックでも、帯が出る', 
   const toast = h.created.find((el) => el.tagName === 'DIV');
   assert.ok(toast, '帯が作られていない（知らせる処理が落ちている）');
   assert.equal(toast.textContent, 'msg:errorDisconnected', '読み込み時に控えた文言が出ていない');
+});
+
+// 拡張を更新したあとの既存タブ。古い版は文脈を失ったまま残り、そこへ background が
+// 新しい版を入れ直す（reviveContentScript）。文書は共有され、chrome と JS の大域は別。
+// 古い版の listener が残っていると、1回の Shift+Alt クリックで新しい版がポストを開き、
+// 同時に古い版が「拡張とつながっていません」の帯を出してしまう。
+function updatedTab(oldSrc = CONTENT_SRC) {
+  const oldH = harness({ version: '9.9.9', contentSrc: oldSrc });
+  oldH.load();
+  breakExtensionContext(oldH);
+  const newH = harness({ version: '9.9.10', shareWith: oldH });
+  newH.load();
+  return { oldH, newH };
+}
+
+test('更新後に新しい版が入れ直された文書では、Shift+Alt クリックで帯を出さずに開く', () => {
+  const { oldH, newH } = updatedTab();
+
+  const prevented = shiftAltClick(newH, newH.postElement('/alice/status/1'));
+
+  assert.equal(newH.sent.length, 1, '新しい版が background へ渡していない');
+  assert.equal(newH.sent[0].type, 'open');
+  assert.equal(newH.sent[0].url, 'https://x.com/alice/status/1');
+  assert.equal(prevented, true, '本来の遷移を止めていない');
+  assert.equal(oldH.sent.length, 0);
+  const toast = newH.created.find((el) => el.tagName === 'DIV');
+  assert.equal(toast, undefined, `開いたのに帯も出た: ${toast && toast.textContent}`);
+});
+
+test('新しい版が入ると、文脈を失った古い版は自分の listener を外す', () => {
+  const { newH } = updatedTab();
+  // 残るのは新しい版の分だけ＝新しい版だけを読み込んだ文書と同じ本数
+  const alone = harness();
+  alone.load();
+  assert.equal(newH.domListeners.length, alone.domListeners.length, '古い版の listener が残っている');
+});
+
+// 古い側が listener を外す作りは、古い側のコードにある。だから、この直しより前の版
+// （main の content.js）から更新した最初の1回は、古い版が listener を残したままになり、
+// 開くのと同時に帯も出る。そのタブを読み直すまで続く。README と STORE_LISTING.md に
+// 書いた「最初の1回は読み直しが要る」は、この2つのテストが期待値として確かめている。
+test('直す前の版から更新したタブでは、読み直すまで開くのと同時に帯も出て、古い版の listener が残る', () => {
+  const { oldH, newH } = updatedTab(CONTENT_BEFORE_FIX_SRC);
+
+  const prevented = shiftAltClick(newH, newH.postElement('/alice/status/1'));
+
+  // 新しい版はポストを開く
+  assert.equal(newH.sent.length, 1, '新しい版が background へ渡していない');
+  assert.equal(newH.sent[0].type, 'open');
+  assert.equal(newH.sent[0].url, 'https://x.com/alice/status/1');
+  assert.equal(prevented, true);
+  assert.equal(oldH.sent.length, 0);
+  // 古い版は送れずに「つながっていません」の帯を出す（文書は共有なので created も共有）
+  const toast = newH.created.find((el) => el.tagName === 'DIV');
+  assert.ok(toast, '古い版が帯を出していない（前提が変わった）');
+  assert.equal(toast.textContent, 'msg:errorDisconnected');
+  // 古い版の listener は外れずに残る＝古い版と新しい版を別々に読み込んだ本数の和
+  const oldAlone = harness({ contentSrc: CONTENT_BEFORE_FIX_SRC });
+  oldAlone.load();
+  const newAlone = harness();
+  newAlone.load();
+  assert.equal(
+    newH.domListeners.length,
+    oldAlone.domListeners.length + newAlone.domListeners.length,
+    '古い版の listener が外れている（前提が変わった）'
+  );
+});
+
+test('直す前の版から更新したタブも、読み直したあとは帯を出さずに開く', () => {
+  // 読み直すと文書が作り直され、manifest の content_scripts で新しい版だけが入る。
+  const reloaded = harness({ version: '9.9.10' });
+  reloaded.load();
+
+  shiftAltClick(reloaded, reloaded.postElement('/alice/status/1'));
+
+  assert.equal(reloaded.sent.length, 1);
+  assert.equal(reloaded.sent[0].type, 'open');
+  const toast = reloaded.created.find((el) => el.tagName === 'DIV');
+  assert.equal(toast, undefined, `読み直したのに帯が出た: ${toast && toast.textContent}`);
+});
+
+test('送れずに文脈を失ったと分かった版は、帯を出したうえで listener を外す', () => {
+  // 新しい版が入らないまま（入れ直しの知らせが無いまま）古い版だけが残った場合。
+  // 帯はこの1回だけ出し、以後は反応しない。
+  const h = harness();
+  h.load();
+  breakExtensionContext(h);
+  shiftAltClick(h, h.postElement('/alice/status/1'));
+  const toast = h.created.find((el) => el.tagName === 'DIV');
+  assert.ok(toast, '帯が作られていない');
+  assert.equal(toast.textContent, 'msg:errorDisconnected');
+  assert.equal(h.domListeners.length, 0, '文脈を失った版の listener が残っている');
+});
+
+test('生きている版は、送るのに失敗しても listener を外さない', () => {
+  const h = harness();
+  h.load();
+  const before = h.domListeners.length;
+  h.sandbox.chrome.runtime.sendMessage = () => Promise.reject(new Error('一時的な失敗'));
+  shiftAltClick(h, h.postElement('/alice/status/1'));
+  return new Promise((resolve) => setImmediate(resolve)).then(() => {
+    assert.equal(h.domListeners.length, before, '生きている版の listener が外れた');
+  });
+});
+
+test('文脈が生きている版は、入れ直しの知らせを受けても listener を外さない', () => {
+  // ページ側の script も同じ名前のイベントを dispatch できる。
+  // 生きている版がそれで止まると、ページから拡張を黙らせられてしまう。
+  const liveH = harness({ version: '9.9.9' });
+  liveH.load();
+  const otherH = harness({ version: '9.9.10', shareWith: liveH });
+  otherH.load();
+  const alone = harness();
+  alone.load();
+  assert.equal(liveH.domListeners.length, alone.domListeners.length * 2, '生きている版の listener が外れた');
+  shiftAltClick(liveH, liveH.postElement('/alice/status/1'));
+  assert.equal(liveH.sent.length, 1, '生きている版が送らなくなった');
 });
 
 test('文脈を失っても、知らせる処理そのものは例外にならない', () => {
@@ -585,12 +805,12 @@ test('あとから post-url.js を入れて入れ直せば、正常に初期化�
   h.loadContent(); // 依存なしで失敗する回
   h.loadParser(); // 依存を入れる
   h.loadContent(); // 入れ直し
-  assert.equal(h.domListeners.length, 2, '立ち直れていない');
+  assert.equal(h.domListeners.length, 3, '立ち直れていない');
   assert.equal(h.runtimeListeners.length, 1, '立ち直れていない');
   assert.equal(h.sandbox.__postCloakLoaded, '9.9.9');
   // そのうえで、もう一度読んでも二重登録しない
   h.loadContent();
-  assert.equal(h.domListeners.length, 2);
+  assert.equal(h.domListeners.length, 3);
   assert.equal(h.runtimeListeners.length, 1);
 });
 

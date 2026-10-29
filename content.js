@@ -166,55 +166,50 @@
   // ただし、より先に登録された window / document の capture listener による
   // 伝播停止まで防げるわけではない。
   // preventDefault はしない（Chrome 標準のメニューはそのまま出す）。
-  document.addEventListener(
-    'contextmenu',
-    (e) => {
-      // ページ側の script が作った合成イベントは受け取らない。
-      // 共有された DOM の上では、ページ側が contextmenu を自分で dispatch できる。
-      // それを利用者の操作として扱うと、望まないシークレットウィンドウが開いたり、
-      // 直前の右クリック対象を横から書き換えられたりする。
-      if (!e.isTrusted) return;
+  // listener は外せるように名前を付けて持つ（6. を参照）。
+  function onContextMenu(e) {
+    // ページ側の script が作った合成イベントは受け取らない。
+    // 共有された DOM の上では、ページ側が contextmenu を自分で dispatch できる。
+    // それを利用者の操作として扱うと、望まないシークレットウィンドウが開いたり、
+    // 直前の右クリック対象を横から書き換えられたりする。
+    if (!e.isTrusted) return;
 
-      // 右クリックは打ち切らない（メニューの文言どおりポストを返す）
-      const target = resolveStatusTarget(e.target, false);
-      setLastContext(target.url, target.source);
-    },
-    true
-  );
+    // 右クリックは打ち切らない（メニューの文言どおりポストを返す）
+    const target = resolveStatusTarget(e.target, false);
+    setLastContext(target.url, target.source);
+  }
+  document.addEventListener('contextmenu', onContextMenu, true);
 
   /* ---------- 3. Shift+Alt クリック ---------- */
 
-  document.addEventListener(
-    'click',
-    (e) => {
-      // 合成イベントは受け取らない（上の contextmenu と同じ理由）
-      if (!e.isTrusted) return;
-      // Ctrl / Command が一緒に押されているときは対象外。
-      // Windows の多くのキーボード配列（US-International など）では AltGr が
-      // Ctrl+Alt として届くので、これを除かないと AltGr で記号を打ちながら
-      // クリックしただけで反応してしまう。文書どおり「Shift+Alt だけ」にする。
-      //
-      // AltGr が Ctrl+Alt として届かない配列・環境もあるので、修飾キーの状態を
-      // 直接も見る。getModifierState は古い環境に無いことがあるため存在確認つき。
-      const altGraph =
-        typeof e.getModifierState === 'function' && e.getModifierState('AltGraph');
-      if (e.ctrlKey || e.metaKey || altGraph) return;
-      if (!e.shiftKey || !e.altKey) return;
+  function onClick(e) {
+    // 合成イベントは受け取らない（上の contextmenu と同じ理由）
+    if (!e.isTrusted) return;
+    // Ctrl / Command が一緒に押されているときは対象外。
+    // Windows の多くのキーボード配列（US-International など）では AltGr が
+    // Ctrl+Alt として届くので、これを除かないと AltGr で記号を打ちながら
+    // クリックしただけで反応してしまう。文書どおり「Shift+Alt だけ」にする。
+    //
+    // AltGr が Ctrl+Alt として届かない配列・環境もあるので、修飾キーの状態を
+    // 直接も見る。getModifierState は古い環境に無いことがあるため存在確認つき。
+    const altGraph =
+      typeof e.getModifierState === 'function' && e.getModifierState('AltGraph');
+    if (e.ctrlKey || e.metaKey || altGraph) return;
+    if (!e.shiftKey || !e.altKey) return;
 
-      // Shift+Alt は本来の遷移を奪うので、/status/ 以外のリンク上では打ち切る
-      const url = resolveStatusUrl(e.target, true);
-      // 見つからないときは preventDefault しない。
-      // ポスト以外の場所での Shift+Alt クリックを、拡張が黙って飲み込まないため。
-      if (!url) return;
+    // Shift+Alt は本来の遷移を奪うので、/status/ 以外のリンク上では打ち切る
+    const url = resolveStatusUrl(e.target, true);
+    // 見つからないときは preventDefault しない。
+    // ポスト以外の場所での Shift+Alt クリックを、拡張が黙って飲み込まないため。
+    if (!url) return;
 
-      // X の行クリックによる遷移は、click が既に defaultPrevented なら走らない。
-      // stopPropagation は X 側の実装が変わったときの保険。
-      e.preventDefault();
-      e.stopPropagation();
-      send({ type: 'open', url });
-    },
-    true
-  );
+    // X の行クリックによる遷移は、click が既に defaultPrevented なら走らない。
+    // stopPropagation は X 側の実装が変わったときの保険。
+    e.preventDefault();
+    e.stopPropagation();
+    send({ type: 'open', url });
+  }
+  document.addEventListener('click', onClick, true);
 
   /* ---------- 4. background とのやりとり ---------- */
 
@@ -280,6 +275,9 @@
   function onSendError(e) {
     console.error('[PostCloak] background へ渡せませんでした:', e);
     notify(TEXT.disconnected);
+    // 文脈を失ったと分かった時点で、この版の listener を外す（6. を参照）。
+    // 帯はこの回だけ出す。生きている版の一時的な失敗では外さない。
+    if (!isContextAlive()) retire();
   }
 
   /* ---------- 5. 画面への通知 ---------- */
@@ -324,4 +322,45 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastEl.remove(), 4000);
   }
+
+  /* ---------- 6. 拡張を更新したあとの既存タブ ---------- */
+
+  // 拡張を更新すると、このタブに残った古い版は文脈を失ったまま listener だけが残る。
+  // そこへ background が新しい版を入れ直す（reviveContentScript）と、同じ文書に
+  // 2つの版が併存し、1回の Shift+Alt クリックで新しい版がポストを開き、
+  // 古い版が「拡張とつながっていません」の帯を出す——成功と失敗が同時に見える。
+  //
+  // 2つの版は文書を共有するが、chrome も JS の大域も共有しない（共有していれば
+  // 古い版も送れているはずで、上の症状は出ない）。だから知らせは文書の上の
+  // イベントで渡す。新しい版は読み込み時にこのイベントを出し、受け取った版は
+  // 自分の文脈が死んでいるときだけ listener を外す。
+  //
+  // ページ側の script も同じイベントを dispatch できるので isTrusted は見ない
+  // （script が出したイベントは常に false）。代わりに、生きている版は外さない。
+  // ページから拡張を黙らせることはできない。
+  const REVIVED_EVENT = 'postcloak-revived';
+
+  // 文脈を失った content script では chrome.runtime.id が undefined になる。
+  // chrome そのものに触れるだけで例外になる場合に備えて try で包む。
+  function isContextAlive() {
+    try {
+      return Boolean(chrome.runtime && chrome.runtime.id);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function onRevived() {
+    if (!isContextAlive()) retire();
+  }
+
+  function retire() {
+    document.removeEventListener('contextmenu', onContextMenu, true);
+    document.removeEventListener('click', onClick, true);
+    document.removeEventListener(REVIVED_EVENT, onRevived);
+    clearLastContext();
+  }
+
+  document.addEventListener(REVIVED_EVENT, onRevived);
+  document.dispatchEvent(new Event(REVIVED_EVENT));
 })();

@@ -19,6 +19,8 @@ const ACCEPTED = [
   ['https://x.com/Alice_1/status/123', 'https://x.com/Alice_1/status/123'],
   // ホスト名の大文字は URL 側で小文字になる
   ['https://X.COM/alice/status/123', 'https://x.com/alice/status/123'],
+  ['https://WWW.X.COM/alice/status/123', 'https://www.x.com/alice/status/123'],
+  ['https://Twitter.Com/alice/status/123', 'https://twitter.com/alice/status/123'],
   // 派生ページはポスト本体へ戻す
   ['https://x.com/alice/status/123/photo/1', 'https://x.com/alice/status/123'],
   ['https://x.com/alice/status/123/video/1', 'https://x.com/alice/status/123'],
@@ -66,6 +68,24 @@ const REJECTED = [
   'ftp://x.com/alice/status/123',
   '/alice/status/123', // base を渡さなければ相対URLは解釈しない
   '',
+  // 境界（2026-10-26 に足した）。いずれも Node 22.22.0 で null を返すことを先に確かめた
+  // 末尾ドットのホストは、大文字でも別の許可ホストでも通さない
+  'https://X.COM./alice/status/123',
+  'https://www.x.com./alice/status/123',
+  // %2F は URL 側でスラッシュへ戻らないので、どの位置に混ざっても形が崩れて弾かれる
+  'https://x.com/alice%2Fbob/status/123',
+  'https://x.com/alice/status%2F123',
+  'https://x.com/alice/status/123%2F',
+  'https://x.com/alice/status/123%2f',
+  'https://x.com/alice/status/123%2Fphoto%2F1',
+  // 許可ホストの一覧に無いサブドメイン
+  'https://mobile.x.com/alice/status/123',
+  'https://mobile.twitter.com/alice/status/123',
+  // 派生ページとして許していない末尾（編集履歴）
+  'https://x.com/alice/status/123/history',
+  'https://x.com/alice/status/123/history/',
+  'https://x.com/i/web/status/123/history',
+  'https://x.com/alice/status/123/photo/1/history',
 ];
 
 test('通すべきURLを通し、ポスト本体の形へ正規化する', () => {

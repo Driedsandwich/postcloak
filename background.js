@@ -111,6 +111,8 @@ async function clearContextTarget(tabId, frameId, expectedUrl) {
 
 // content script を入れ直し、「もう一度どうぞ」を画面に出す。
 // 右クリックはもう終わっているので、この回の操作は完了できない。
+// 更新前の版が文脈を失ったまま残っていれば、入れた版が読み込み時に出す
+// 知らせを受けて、そちらが自分の listener を外す（content.js の 6.）。
 async function reviveContentScript(tabId, frameId) {
   try {
     await chrome.scripting.executeScript({

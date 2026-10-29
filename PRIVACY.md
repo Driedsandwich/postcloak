@@ -44,7 +44,8 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 
 - **60秒を超えた値は使いません**（問い合わせを受けた時点で経過時間を確かめます）
 - 置いたときに仕掛けたタイマーが、**60秒後以降の最初の実行機会に参照そのものを消します**
-- それより前でも、**一度使う／ポストの外を右クリックする／別の場所を右クリックし直す／ページを離れる／タブを閉じる**、のいずれかで捨てられます
+- それより前でも、**一度使う／ポストの外を右クリックする／別の場所を右クリックし直す／タブを閉じる**、のいずれかで捨てられます
+- X の中で別のポストやタイムラインへ移っても、それだけでは捨てられません。X は画面を移るときにページを読み直さないためです。そのときも、上の60秒の期限とタイマーで捨てます
 
 ブラウザのタイマーは、タブが停止していたり動作が抑制されていたりすると、ちょうど60秒後に動くとは限りません。そのため「必ず60.000秒で物理的に消える」とは書きません。**確実なのは、60秒を超えた値は使わないことと、タイマーが動いた時点で参照が消えることの2つです。**
 
@@ -133,7 +134,8 @@ How that value is handled:
 
 - **A value older than 60 seconds is never used** (the elapsed time is checked when the menu asks for it).
 - A timer set when the value is stored **clears the reference itself at the first opportunity at or after 60 seconds**.
-- Before that, it is discarded as soon as any of these happens: **it is used once; you right-click outside a post; you right-click somewhere else; you navigate away; you close the tab.**
+- Before that, it is discarded as soon as any of these happens: **it is used once; you right-click outside a post; you right-click somewhere else; you close the tab.**
+- Moving to another post or timeline within X does not discard it by itself, because X does not reload the page when you move between screens. The 60-second limit and the timer above still apply.
 
 Browser timers do not necessarily run at exactly 60 seconds — a frozen or throttled tab can delay them. So this policy does not claim the value is physically erased at exactly 60.000 seconds. **What is guaranteed is that a value older than 60 seconds is never used, and that the reference is cleared once the timer runs.**
 
