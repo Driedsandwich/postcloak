@@ -30,7 +30,7 @@ PostCloak のコードと文書に出てくる言葉を、プログラムを書�
 | 「シークレット モードでの実行を許可」 | Chrome の拡張ごとの設定。PostCloak を動かすのには要らない。オンにしても挙動は変わらない | `background.js:146-153`、`README.md:73` |
 | タブ ID / フレーム ID（`tabId` / `frameId`） | タブや、ページの中の区画（iframe など）を見分ける番号。どのページのどこへ話しかけるかを指定するのに使う | `background.js:53-58` |
 | iframe（フレーム） | ページの中に別のページをはめ込む仕組み（一般的な説明）。他のサイトに埋め込まれたポスト（`platform.twitter.com`）は対象外 | `background.js:13-16`、`README.md:53` |
-| メッセージ（`sendMessage` / `onMessage`） | 裏側の係とページの中の係が、短い依頼や返事をやり取りする仕組み | `background.js:79`、`content.js:221` |
+| メッセージ（`sendMessage` / `onMessage`） | 裏側の係とページの中の係が、短い依頼や返事をやり取りする仕組み | `background.js:79`、`content.js:216` |
 | 文脈を失う（context invalidated） | 拡張を更新・無効化したあと、古いタブに残った content script が拡張本体とつながらなくなった状態。このとき文言の仕組み（i18n）も消える | `content.js:28-36`、`:269-270` |
 | i18n / ロケール / `_locales` | 表示言語ごとの文言の切り替え。`_locales/en` が英語、`_locales/ja` が日本語。既定は英語（`default_locale`） | `manifest.json:5`、`_locales/` |
 | `__MSG_extName__` | manifest の中で「文言ファイルの `extName` を入れて」という書き方 | `manifest.json:3`、`test/manifest.test.js:18-33` |
@@ -44,13 +44,13 @@ PostCloak のコードと文書に出てくる言葉を、プログラムを書�
 | 用語 | やさしい説明 | 根拠 |
 |---|---|---|
 | ポスト | X（旧 Twitter）の投稿1件 | `README.md:3` |
-| Shift+Alt クリック | Shift と Alt を押しながらのクリック。ポストの上ならそのポストを開く | `content.js:185-217` |
-| 修飾キー | Shift・Alt・Ctrl・Command（Mac）など、ほかのキーと一緒に押すキー | `content.js:192-202` |
-| AltGr / AltGraph | 一部の Windows 配列で記号を打つためのキー。Ctrl+Alt として届くことがある。PostCloak は AltGr が押されていたら反応しない | `content.js:192-201`、`README.md:48` |
-| `getModifierState` | 「いまこの修飾キーが押されているか」をブラウザに尋ねる機能。古い環境には無いことがあるので、あるか確かめてから使う | `content.js:197-200` |
+| Shift+Alt クリック | Shift と Alt を押しながらのクリック。ポストの上ならそのポストを開く | `content.js:183-212` |
+| 修飾キー | Shift・Alt・Ctrl・Command（Mac）など、ほかのキーと一緒に押すキー | `content.js:188-198` |
+| AltGr / AltGraph | 一部の Windows 配列で記号を打つためのキー。Ctrl+Alt として届くことがある。PostCloak は AltGr が押されていたら反応しない | `content.js:188-197`、`README.md:48` |
+| `getModifierState` | 「いまこの修飾キーが押されているか」をブラウザに尋ねる機能。古い環境には無いことがあるので、あるか確かめてから使う | `content.js:193-196` |
 | 入力言語のホットキー | Windows で入力言語を切り替えるキーの組み合わせ。Left Alt+Shift が割り当てられていると、Shift+Alt クリックと同時に言語が切り替わることがある | `README.md:42-47` |
-| 帯（トースト・通知） | 画面下に数秒だけ出る小さな案内。`alert()` のように操作を止めない | `content.js:285-326` |
-| `role="status"` / `aria-live` | 読み上げソフトに、帯の文を割り込まずに読ませるための印 | `content.js:297-301` |
+| 帯（トースト・通知） | 画面下に数秒だけ出る小さな案内。`alert()` のように操作を止めない | `content.js:283-324` |
+| `role="status"` / `aria-live` | 読み上げソフトに、帯の文を割り込まずに読ませるための印 | `content.js:295-299` |
 | X Pro（pro.x.com） | X の別の画面。作りが違うので対象外 | `README.md:54`、`test/post-url.test.js:62` |
 
 ## URL とページの中身
@@ -73,16 +73,16 @@ PostCloak のコードと文書に出てくる言葉を、プログラムを書�
 | 要素 / `<a>` / `<article>` / `<time>` | DOM の部品。`<a>` はリンク、`<article>` は x.com ではポスト1件の箱、`<time>` は投稿時刻 | `content.js:130-155` |
 | 祖先をたどる | 触った部品から、その親、そのまた親…と上へ順に見ていくこと | `content.js:110-145` |
 | `div[role="link"]` | 見た目はリンクだが `<a>` ではない部品。引用の箱がこれで、PostCloak はわざと区別しない | `SMOKE.md:54` |
-| イベント / listener | 「右クリックされた」「クリックされた」という知らせと、それを待ち受ける処理 | `content.js:169-217` |
+| イベント / listener | 「右クリックされた」「クリックされた」という知らせと、それを待ち受ける処理 | `content.js:170-212` |
 | capture 段 / bubble 段 | 知らせがページの外側から内側へ届く段階（capture）と、内側から外側へ戻る段階（bubble）。PostCloak は先に届く capture 段で拾う | `content.js:165-168` |
-| `preventDefault` / `stopPropagation` | 「ブラウザ本来の動き（リンク移動など）をやめて」「この知らせをほかへ回さないで」という指示 | `content.js:206-213` |
-| 合成イベント / `isTrusted` | ページ側のプログラムが作った偽物の操作。本物の操作だけ `isTrusted` が真になるので、偽物は無視する | `content.js:172-176`、`:190-191` |
+| `preventDefault` / `stopPropagation` | 「ブラウザ本来の動き（リンク移動など）をやめて」「この知らせをほかへ回さないで」という指示 | `content.js:202-209` |
+| 合成イベント / `isTrusted` | ページ側のプログラムが作った偽物の操作。本物の操作だけ `isTrusted` が真になるので、偽物は無視する | `content.js:171-175`、`:190-191` |
 | 控え（`lastContext`） | 右クリックした時点で割り出したポストのURLを、メニューが押されるまで覚えておく入れ物 | `content.js:55-61` |
 | 60秒の期限（TTL） | 控えを使ってよい時間。過ぎたら使わず、タイマーで消す | `content.js:52-53`、`PRIVACY.md:43-49` |
 | タイマー / handle | 「60秒後にこれをして」という予約と、その予約を取り消すための札 | `content.js:90-105` |
 | 世代番号（generation） | 控えを作るたびに増える番号。古いタイマーが新しい控えを消さないための目印 | `content.js:76-106` |
 | `source`（`link` / `fallback`） | 控えのURLを、リンクの上から採ったか（link）、ポストの箱から採ったか（fallback）の区別。消してよいかの判断に使う | `content.js:79-82`、`:128-145` |
-| `getContextTarget` / `clearContextTarget` / `notify` / `open` | 係どうしのメッセージの種類。それぞれ「控えをちょうだい」「控えを消して」「帯を出して」「これを開いて」 | `content.js:221-267`、`background.js:134-142` |
+| `getContextTarget` / `clearContextTarget` / `notify` / `open` | 係どうしのメッセージの種類。それぞれ「控えをちょうだい」「控えを消して」「帯を出して」「これを開いて」 | `content.js:216-262`、`background.js:134-142` |
 | 二重登録 | 同じ待ち受け処理が2つ登録され、1回の操作で2回動くこと。印 `__postCloakLoaded` で防ぐ | `content.js:8-10`、`test/content-script.test.js:197` |
 | 無名関数で包む / `var` と `const` | ファイルをもう一度読み込んだときに「同じ名前がもうある」で落ちないための書き方。`post-url.js` の一番外側では `const` などを使わない | `post-url.js:8-11`、`content.js:5-7` |
 
