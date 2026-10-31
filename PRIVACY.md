@@ -1,6 +1,6 @@
 # プライバシーポリシー / Privacy Policy — PostCloak
 
-最終更新: 2026-08-05
+最終更新 / Last updated: 2026-10-31
 
 ---
 
@@ -50,7 +50,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 
 ブラウザのタイマーは、タブが停止していたり動作が抑制されていたりすると、ちょうど60秒後に動くとは限りません。そのため「必ず60.000秒で物理的に消える」とは書きません。**確実なのは、60秒を超えた値は使わないことと、タイマーが動いた時点で参照が消えることの2つです。**
 
-ディスクにも `chrome.storage` にも書きません。同期もしません。
+拡張の処理として、ディスクにも `chrome.storage` にも書きません。同期もしません。
 
 ### 4. 要求する権限とその理由
 
@@ -61,7 +61,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 | `host_permissions`（上記4ドメイン） | 上の `scripting` による入れ直しの対象を、この4つに限るため |
 | `content_scripts.matches`（上記4ドメイン） | ポストのURLを割り出す処理を、この4つのドメインでだけ動かすため |
 
-`tabs`（閲覧履歴の読み取り）、`storage`、`<all_urls>` は要求していません。
+`tabs`（タブの URL やタイトルを読む）、`history`（閲覧履歴）、`storage`、`<all_urls>` は要求していません。
 
 ### 5. リモートコードの実行
 
@@ -105,7 +105,7 @@ So this section separates what happens on your device from what leaves it.
 
 | | Detail |
 |---|---|
-| **Handled on your device** | The hyperlinks around the point you right-clicked or Shift+Alt clicked, and the one post URL extracted from it (its path contains the post author's username). Used solely to open that post in an Incognito window |
+| **Handled on your device** | The hyperlinks around the point you right-clicked or Shift+Alt clicked, and the one post URL extracted from it (its path usually contains the post author's username; the `/i/status/<id>` and `/i/web/status/<id>` forms do not). Used solely to open that post in an Incognito window |
 | **Received by the developer, our own backend, or any analytics/ad service** | **Nothing.** There is no backend of ours, no analytics, no ads, no external APIs |
 | **Sent by the extension on its own** | **Nothing.** No requests of its own, no telemetry, no copies sent to any other server (this is separate from the navigation in the row below) |
 | **Received by X, the destination site** | **Yes.** When you ask the extension to open a post, Chrome loads that post's URL as a normal page navigation, and **X receives that ordinary request**. It is the same request you would make by typing the URL yourself; the extension adds nothing to it |
@@ -141,7 +141,7 @@ How that value is handled:
 
 Browser timers do not necessarily run at exactly 60 seconds — a frozen or throttled tab can delay them. So this policy does not claim the value is physically erased at exactly 60.000 seconds. **What is guaranteed is that a value older than 60 seconds is never used, and that the reference is cleared once the timer runs.**
 
-Nothing is written to disk or to `chrome.storage`, and nothing is synced.
+The extension itself writes nothing to disk or to `chrome.storage`, and syncs nothing.
 
 ### 4. Permissions and why
 
@@ -152,7 +152,7 @@ Nothing is written to disk or to `chrome.storage`, and nothing is synced.
 | `host_permissions` (the four domains) | To limit the re-injection above to those four domains |
 | `content_scripts.matches` (the four domains) | To run the URL resolution only on those four domains |
 
-No `tabs` (read your browsing history), no `storage`, no `<all_urls>`.
+No `tabs` (reading tab URLs and titles), no `history` (browsing history), no `storage`, no `<all_urls>`.
 
 ### 5. Remote code
 

@@ -29,9 +29,9 @@ PostCloak は、そのリンクになっていない場所からポストのURL�
 ポストの本文やポストへのリンクの上なら、どちらも同じ結果になります。
 ポストの中のプロフィール・外部記事・ハッシュタグのリンクの上では結果が分かれ、
 右クリックの項目は囲みのポストを開き、Shift+Alt クリックには拡張は介入しません。
-ポストの外（サイドバーや余白）を右クリックして選んだときは、ウィンドウは開かず、
-画面下に短い案内が出ます。Shift+Alt クリックのときは、拡張は何もしません（窓も案内も出しません）。
-ただし、ポストの外でも、ポストへのリンク（タイムスタンプなど）の上なら、そのポストを開きます。
+ポストの外（サイドバーや余白）では、ポストへのリンク（タイムスタンプなど）の上ならそのポストを
+開きます。それ以外の所を右クリックして選んだときは、ウィンドウは開かず、画面下に短い案内が
+出ます。Shift+Alt クリックのときは、拡張は何もしません（窓も案内も出しません）。
 
 ■ 動作する範囲
 x.com / www.x.com / twitter.com / www.twitter.com のページ上だけです。
@@ -45,21 +45,23 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 　セッションが残ります
 ・ポストのURLでないリンク（プロフィール、外部記事、ハッシュタグなど）の上で
 　Shift+Alt クリックしたときは、この拡張は介入せず、Chrome とページ本来の動作に任せます。
-　ポストのパーマリンクや画像のリンクは、そのポストとして扱います
+　ポストのパーマリンクと、画像・動画・いいねや引用の一覧など、ポストのURLから派生した
+　リンクは、そのポストとして扱います
 ・Windows の一部の構成では、Left Alt+Shift が入力言語またはキーボードレイアウトの
 　切替に割り当てられていることがあります。その構成で Shift+Alt クリックすると、
 　ポストを開く操作と同時に入力言語が切り替わる場合があります。
 　この割り当ては Windows 側の設定によるもので、この拡張が原因ではありません。
 　設定画面の名称と場所は Windows の版・表示言語によって異なります。
 　右クリックメニューはこのショートカット競合の影響を受けません
-・1.6.0 から更新した直後は、更新前から開いていた x.com のタブでは、Shift+Alt クリックで
-　何も起きません。そのタブを一度読み直すか、ポストの本文（リンクでない所）を右クリックして
-　メニューの項目を選ぶ（「準備ができました」と出ます）と、以後は開きます。
-　この注意は、1.6.0 から更新したときに開いていたタブだけのものです
+・拡張を入れる前、または 1.6.0 から更新する前から開いていた x.com のタブでは、
+　Shift+Alt クリックで何も起きません。そのタブを一度読み直すか、ポストの本文（リンクで
+　ない所）を右クリックしてメニューの項目を選ぶ（「準備ができました」と出ます）と、
+　以後は開きます。新しく開いたタブや、一度読み直したタブでは起きません
 ・AltGr を押しながらのクリックには反応しません。多くの Windows の配列では AltGr が
 　Ctrl+Alt として届くので、Ctrl または Command と一緒の Shift+Alt クリックも対象外です。
 　そのときは拡張は何もせず、クリックは本来の動作のままです
-・引用つきのポストでは、引用の箱の中をクリックしても、外側のポストが開きます
+・引用つきのポストでは、引用の箱の中のリンクでない所で使うと、外側のポストが開きます
+　（引用元のタイムスタンプや画像のリンクの上なら、引用元のポストが開きます）
 ・シークレットモードが組織のポリシーなどで使えない環境では、ウィンドウは開かず、
 　通常は画面下に案内が出ます
 
@@ -111,11 +113,10 @@ PostCloak works out the post's URL from those non-link areas and opens it.
 On the post body or on a link to a post, both do the same thing. On a profile, external
 article, or hashtag link inside a post they differ: the menu item opens the enclosing
 post, while the extension leaves a Shift+Alt click alone.
-Outside a post (sidebar, margins): choosing the menu item opens no window and shows a
-short notice at the bottom of the page. On a Shift+Alt click there, the extension does
-nothing (no window, no notice).
-The exception is a link to a post (such as its timestamp): even outside a post, that post
-opens.
+Outside a post (sidebar, margins), a link to a post (such as its timestamp) still opens
+that post. Anywhere else there, choosing the menu item opens no window and shows a short
+notice at the bottom of the page, and on a Shift+Alt click the extension does nothing
+(no window, no notice).
 
 ■ Where it runs
 Only on pages of x.com / www.x.com / twitter.com / www.twitter.com.
@@ -126,24 +127,27 @@ pro.x.com (X Pro) has a different layout and is out of scope.
 - A new Incognito window opens every time. There is no feature that adds a tab to an
   Incognito window you already have open.
 - Incognito windows share one session; it lasts until you close the last one.
-- Shift+Alt clicking a link that is not a post URL (a profile, an external article, a
-  hashtag) does nothing; the extension does not intervene, and Chrome and the page handle
-  the click normally. A post permalink or a post
-  image link is treated as that post.
+- When you Shift+Alt click a link that is not a post URL (a profile, an external
+  article, a hashtag), the extension does not intervene, and Chrome and the page handle
+  the click normally. A post permalink, and links derived from a post URL (its images,
+  videos, likes, or quotes), are treated as that post.
 - On some Windows configurations, Left Alt+Shift may be assigned to switch the input
   language or keyboard layout. In that configuration, a Shift+Alt click may also trigger
   the operating system's language switch. That assignment comes from Windows, not from
   this extension. The setting name and location vary by Windows version and display
   language. The right-click menu is unaffected by this shortcut conflict.
-- Right after updating from 1.6.0, a Shift+Alt click does nothing in x.com tabs that were
-  already open. Reload that tab once, or right-click the body of a post (not a link) and
-  choose the menu item (it shows "Ready now — please try once more."); after that it
-  opens normally. This applies only to tabs that were open when you updated from 1.6.0.
+- In x.com tabs that were already open before you installed the extension, or before you
+  updated from 1.6.0, a Shift+Alt click does nothing. Reload that tab once, or right-click
+  the body of a post (not a link) and choose the menu item (it shows "Ready now — please
+  try once more."); after that it opens normally. Newly opened or reloaded tabs are not
+  affected.
 - The extension ignores clicks made while holding AltGr. On many Windows layouts AltGr
   arrives as Ctrl+Alt, so a Shift+Alt click together with Ctrl or Command is ignored too;
   the extension also checks the AltGraph modifier directly. In those cases it opens
   nothing and leaves the click's normal behaviour alone.
-- In a post that quotes another post, clicking inside the quoted box opens the outer post.
+- In a post that quotes another post, using it on a non-link area inside the quoted box
+  opens the outer post (on the quoted post's timestamp or image link, the quoted post
+  opens).
 - Where Incognito mode is disabled (for example by an organization's policy), no window
   opens, and a notice usually appears at the bottom of the page.
 
@@ -233,7 +237,7 @@ That is the extension's only function.
 ### 5.1 実装上の事実（コードから確定できる）
 
 - 利用者が右クリックまたは Shift+Alt クリックしたとき、その位置の周辺の DOM を**端末内で読む**
-- そこからポストのURLを**1件だけ**取り出す。URLには投稿者にあたる部分（`/<利用者名>/`）が含まれる
+- そこからポストのURLを**1件だけ**取り出す。URLには多くの場合、投稿者にあたる部分（`/<利用者名>/`）が含まれる（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）
 - 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。ポストへのリンクの上で右クリックして直接開く回は、控えた値を使わずに開き、値を消すようタブへ依頼する（完了は待たない。届かなければ60秒の期限・タイマー・次の右クリックが受け皿）。content.js に画面の移動を検知する処理は無いので、X の中で画面を移っても、それだけでは捨てない（そのときも、60秒を超えた値は使わず、タイマーが動いた時点で参照を消す）
 - **開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送らない**（そのいずれも実装に無い）
 - **永続保存しない**（ディスクにも `chrome.storage` にも書かない）
@@ -255,7 +259,7 @@ That is the extension's only function.
 |---|---|---|---|
 | **個人を特定できる情報** | 例: 名前、住所、メールアドレス、年齢、個人識別番号 | 取り出すポストのURLには、多くの場合**投稿者のユーザー名にあたる部分**（`/<利用者名>/`）が含まれる（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）。それを別に切り出したり記録したりはしないが、URLの一部として端末内で扱う | **チェックすることを推奨。必ずフォームで再確認する。** 公式 User Data FAQ は PII の例に *"a person's name, address, telephone number, email address, and **username**"* と**ユーザー名を明記**している。フォームの例示は「例:」で網羅ではないため、そこに無いことは除外の根拠にならない。**「URLの一部だからPIIではない」「利用者本人のユーザー名ではないからPIIではない」とはコードから断定できない** |
 | **ユーザーのアクティビティ** | 例: ネットワーク監視、クリック、マウスの位置、スクロール、キーストロークの**ロギング** | 右クリックと Shift+Alt クリックのイベント、その `target`、修飾キーの状態を**機能の入力として使う**。記録・集計・送信はせず、マウス位置・スクロール・キー入力は扱わない | **必ずフォームで再確認する。** 定義の例はいずれも「ロギング（記録・監視）」を指しており、それに当たらないと読めるが、**「保存しないから扱っていない」とはコードから断定できない** |
-| **ウェブサイトのコンテンツ** | 例: テキスト、画像、音声、動画、**ハイパーリンク** | ページ由来の**文字列として取り出すのは `href`（ハイパーリンク）だけ**（`getAttribute('href')` の2箇所）。どのポストに属するかを判断するために、要素の種別・祖先関係・`article` と `time` を含むリンクの構造も参照する。本文・画像データ・音声・動画は取り出さない（`innerText` / `innerHTML` / `src` はいずれも0件） | **チェックする。** 定義の例に「ハイパーリンク」が名指しされており、端末内だけの処理でも開示が要る（FAQ） |
+| **ウェブサイトのコンテンツ** | 例: テキスト、画像、音声、動画、**ハイパーリンク** | ページ由来の**文字列として取り出すのは `href`（ハイパーリンク）だけ**（`getAttribute('href')` の2箇所）。相対URLを解くために、そのページのURL（`location.href`）を基準として使う。どのポストに属するかを判断するために、要素の種別・祖先関係・`article` と `time` を含むリンクの構造も参照する。本文・画像データ・音声・動画は取り出さない（`innerText` / `innerHTML` / `src` はいずれも0件） | **チェックする。** 定義の例に「ハイパーリンク」が名指しされており、端末内だけの処理でも開示が要る（FAQ） |
 | **ウェブ履歴** | ユーザーがアクセスしたウェブページの**リスト**およびその関連データ（ページのタイトル、アクセス時刻など） | リストを作らない。ページのタイトルもアクセス時刻も扱わない。`history` も `tabs` 権限も要求しない。扱うのは、利用者がこれから開こうとしている**1件のURL** | **必ずフォームで再確認する。** 定義の中心は「アクセスしたページのリスト」で、それには当たらないと読める |
 | 認証に関する情報 | 例: パスワード、認証情報、セキュリティ保護用の質問、PIN | `cookie` / `localStorage` / `sessionStorage` / `chrome.storage` へのアクセスが**いずれも0件**。`storage` も `cookies` 権限も要求しない | 抽出・保存・送信する処理が無い。フォームの文言と照合して確認 |
 | 個人的コミュニケーション | 例: メール、テキストまたはチャットメッセージ | ポストの**本文を読んでいない**（`textContent` の唯一の登場箇所は自前の通知帯への書き込み） | 同上 |
@@ -265,6 +269,8 @@ That is the extension's only function.
 **申告は過少にも過大にも寄せず、実装・現行フォームの定義・プライバシーポリシー・掲載説明に一致する正確な内容にしてください。**
 
 「ウェブサイトのコンテンツ」（および推奨どおり「個人を特定できる情報」）にチェックを入れると、掲載ページの表示が「データを収集または使用しない」から開示ありへ変わります。**これは是正です**——現状の表示は、端末内でハイパーリンクとユーザー名を含むURLを使っている実装と食い違っています。
+
+**画面の中での開示と同意（2026-10-31 に確認した論点）**: 公式の「Disclosure Requirements」（https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements ・頁の更新 2022-11-01）は「If your Product handles any user data, then prior to installation, it must: Prominently disclose what user data will be collected and how it will be used. Obtain the user's affirmative and informed consent for such use.」と書き、User Data FAQ の第10項は「The prominent disclosure and consent must occur within the Product's user interface. Disclosures in the Chrome Web Store description or inline installation page do not satisfy this requirement.」と書いている（どちらも 2026-10-31 に公式の頁を取って原文を確かめた）。3 つの頁に「目立つ機能と密接に関係しない取り扱いに限る」という限定の語は無い（2026-10-31 に数えて 0 件）。**文面の上では、端末内でハイパーリンクと URL を扱う本拡張にも当たりうる。** 推奨は、上の申告どおりに直して出し、画面の中の同意の仕組みは今は作らない（データは端末の外へ出ず、使うのは利用者がその場で選んだポストの URL 1 件だけ・審査で指摘されても直して出し直せる・同意の画面を足すとコードの変更と実機の取り直しが要る）。**審査でこの点を理由に戻されたら**、次の版（1.6.2）で、インストール直後に一度だけ開く説明の頁（扱う物・使い道・送らないこと）と同意のボタンを足して出し直す。
 
 用途の記入欄が現れた場合は、次を貼ってください（欄が出なければ不要です）。
 
@@ -298,7 +304,7 @@ That is the extension's only function.
 x.com のタイムラインはログインしないと表示されません。資格情報は渡さず、ログアウト状態でも表示される公開プロフィールページを指定しています。
 
 ```
-This extension only works on x.com / twitter.com.
+This extension only works on x.com, www.x.com, twitter.com, and www.twitter.com.
 
 1. Open https://x.com/NASA (a public profile; no login required to see posts).
 2. Right-click on the text of any post (not on a link).
@@ -311,7 +317,8 @@ This extension only works on x.com / twitter.com.
    link) and choose the same item.
    → A short notice appears at the bottom of the page; no window opens.
 
-The menu item does not appear on any site other than x.com / twitter.com.
+The menu item does not appear on any site other than x.com, www.x.com, twitter.com, and
+www.twitter.com.
 No network requests are made to any server by the extension itself.
 ```
 
