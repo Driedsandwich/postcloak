@@ -50,9 +50,9 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 　この割り当ては Windows 側の設定によるもので、この拡張が原因ではありません。
 　設定画面の名称と場所は Windows の版・表示言語によって異なります。
 　右クリックメニューはこのショートカット競合の影響を受けません
-・古い版から更新したときは、更新前から開いていた x.com のタブで Shift+Alt クリックすると、
-　ポストが開くのと同時に「拡張とつながっていません」の案内も出ることがあります。
-　そのタブを一度読み直すと出なくなります（読み直しが要るのは、この更新の最初の1回だけです）
+・1.6.0 から更新した直後は、更新前から開いていた x.com のタブで、最初の Shift+Alt クリックが
+　何も起こさないことがあります。そのタブを一度読み直すか、ポストを右クリックしてメニューの
+　項目を選ぶ（「準備ができました」と出ます）と、以後は開きます（この更新の最初の1回だけです）
 
 ■ プライバシー
 右クリックまたは Shift+Alt クリックした場所の周辺のハイパーリンクと、そこから取り出した
@@ -121,9 +121,10 @@ pro.x.com (X Pro) has a different layout and is out of scope.
   the operating system's language switch. That assignment comes from Windows, not from
   this extension. The setting name and location vary by Windows version and display
   language. The right-click menu is unaffected by this shortcut conflict.
-- After updating from an older version, a Shift+Alt click in an x.com tab that was
-  already open may open the post and also show "Lost the connection to the extension".
-  Reload that tab once and it stops (this is needed only for this first update).
+- Right after updating from 1.6.0, the first Shift+Alt click in an x.com tab that was
+  already open may do nothing. Reload that tab once, or right-click a post and choose the
+  menu item (it shows "Ready now — please try once more."); after that it opens normally.
+  This is needed only for this first update.
 - Holding AltGr while clicking does nothing. On many Windows layouts AltGr arrives as
   Ctrl+Alt; the extension also checks the AltGraph modifier directly, so it stays quiet
   while you type special characters.
