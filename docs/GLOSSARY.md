@@ -49,8 +49,8 @@ PostCloak のコードと文書に出てくる言葉を、プログラムを書�
 | AltGr / AltGraph | 一部の Windows 配列で記号を打つためのキー。Ctrl+Alt として届くことがある。PostCloak は AltGr が押されていたら反応しない | `content.js:188-197`、`README.md:48` |
 | `getModifierState` | 「いまこの修飾キーが押されているか」をブラウザに尋ねる機能。古い環境には無いことがあるので、あるか確かめてから使う | `content.js:193-196` |
 | 入力言語のホットキー | Windows で入力言語を切り替えるキーの組み合わせ。Left Alt+Shift が割り当てられていると、Shift+Alt クリックと同時に言語が切り替わることがある | `README.md:42-47` |
-| 帯（トースト・通知） | 画面下に数秒だけ出る小さな案内。`alert()` のように操作を止めない | `content.js:283-324` |
-| `role="status"` / `aria-live` | 読み上げソフトに、帯の文を割り込まずに読ませるための印 | `content.js:295-299` |
+| 帯（トースト・通知） | 画面下に数秒だけ出る小さな案内。`alert()` のように操作を止めない | `content.js:284-325` |
+| `role="status"` / `aria-live` | 読み上げソフトに、帯の文を割り込まずに読ませるための印 | `content.js:296-300` |
 | X Pro（pro.x.com） | X の別の画面。作りが違うので対象外 | `README.md:54`、`test/post-url.test.js:62` |
 
 ## URL とページの中身

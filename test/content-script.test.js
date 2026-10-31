@@ -697,7 +697,90 @@ test('送れずに文脈を失ったと分かった版は、帯を出したう�
   const toast = h.created.find((el) => el.tagName === 'DIV');
   assert.ok(toast, '帯が作られていない');
   assert.equal(toast.textContent, 'msg:errorDisconnected');
-  assert.equal(h.domListeners.length, 0, '文脈を失った版の listener が残っている');
+  // 2026-10-31 に期待を変えた: 以前は listener を 0 本にしていたが、入れ直しの知らせの
+  // 待ち受けだけは残す（新しい版が入ったときに、この帯を片づけるため）。
+  // 操作に反応する contextmenu と click は外れている。
+  assert.deepEqual(
+    h.domListeners.map((l) => l.type),
+    ['postcloak-revived'],
+    '文脈を失った版に、操作へ反応する listener が残っている'
+  );
+  shiftAltClick(h, h.postElement('/alice/status/2'));
+  assert.equal(h.sent.length, 0, '外したあとも反応している');
+});
+
+test('送れずに外した版の帯は、外したその回は消さずに見せる', () => {
+  const h = harness();
+  h.load();
+  breakExtensionContext(h);
+  shiftAltClick(h, h.postElement('/alice/status/1'));
+  const toast = h.created.find((el) => el.tagName === 'DIV');
+  assert.ok(toast, '帯が作られていない');
+  assert.equal(toast.isConnected, true, '外すのと同時に帯まで消えた');
+  assert.equal(h.pendingTimers(4000), 1, '帯を消す timer が仕掛かっていない');
+});
+
+test('送れずに外した版の帯は、新しい版が入ると片づけられ、知らせの待ち受けも外れる', () => {
+  const oldH = harness({ version: '9.9.9' });
+  oldH.load();
+  breakExtensionContext(oldH);
+  shiftAltClick(oldH, oldH.postElement('/alice/status/1'));
+  const oldToast = oldH.created.find((el) => el.tagName === 'DIV');
+  assert.ok(oldToast && oldToast.isConnected, '前提: 古い版の帯が出ていない');
+
+  const newH = harness({ version: '9.9.10', shareWith: oldH });
+  newH.load();
+
+  assert.equal(oldToast.isConnected, false, '新しい版が入っても古い版の帯が残っている');
+  assert.equal(oldH.pendingTimers(4000), 0, '古い版の帯の timer が残っている');
+  const alone = harness();
+  alone.load();
+  assert.equal(newH.domListeners.length, alone.domListeners.length, '古い版の listener が残っている');
+});
+
+test('入れ直しで外した版に、外す前の送信の失敗が遅れて届いても帯を出さない', async () => {
+  // 生きているうちに送った → 返事が来る前に拡張が更新され、新しい版が入った →
+  // そのあとで失敗が届く、という順序。新しい版が引き継いだ文書へ
+  // 古い版の「つながっていません」を新しく出してはいけない。
+  const oldH = harness({ version: '9.9.9' });
+  oldH.load();
+  let rejectSend;
+  oldH.sandbox.chrome.runtime.sendMessage = () =>
+    new Promise((resolve, reject) => {
+      rejectSend = reject;
+    });
+  shiftAltClick(oldH, oldH.postElement('/alice/status/1'));
+  assert.equal(typeof rejectSend, 'function', '前提: 送っていない');
+
+  breakExtensionContext(oldH);
+  const newH = harness({ version: '9.9.10', shareWith: oldH });
+  newH.load();
+
+  rejectSend(new Error('Extension context invalidated.'));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const toast = oldH.created.find((el) => el.tagName === 'DIV');
+  assert.equal(toast, undefined, `外したあとに遅れて帯が出た: ${toast && toast.textContent}`);
+});
+
+test('対照: 外す前に届いた送信の失敗は、今までどおり帯を出す', async () => {
+  // 上のテストの対照。同じ遅れた失敗でも、新しい版が入る前に届けば帯を出す。
+  const oldH = harness({ version: '9.9.9' });
+  oldH.load();
+  let rejectSend;
+  oldH.sandbox.chrome.runtime.sendMessage = () =>
+    new Promise((resolve, reject) => {
+      rejectSend = reject;
+    });
+  shiftAltClick(oldH, oldH.postElement('/alice/status/1'));
+  breakExtensionContext(oldH);
+
+  rejectSend(new Error('Extension context invalidated.'));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const toast = oldH.created.find((el) => el.tagName === 'DIV');
+  assert.ok(toast, '外す前の失敗なのに帯が出ていない');
+  assert.equal(toast.textContent, 'msg:errorDisconnected');
 });
 
 test('生きている版は、送るのに失敗しても listener を外さない', () => {

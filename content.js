@@ -273,6 +273,7 @@
   }
 
   function onSendError(e) {
+    if (retired) return; // 外したあとに遅れて届いた失敗は出さない（6. を参照）
     console.error('[PostCloak] background へ渡せませんでした:', e);
     notify(TEXT.disconnected);
     // 文脈を失ったと分かった時点で、この版の listener を外す（6. を参照）。
@@ -350,15 +351,35 @@
     }
   }
 
+  // 一度外した版は、遅れて届いた送信の失敗にも反応しない。外したあとに失敗が
+  // 届く順序だと、新しい版が引き継いだ文書へ古い版の帯が新しく出てしまうため。
+  let retired = false;
+
+  // 新しい版が入ったら、古い版は listener を外し、自分の帯も片づける。
+  // 送れずに外した版（onSendError）がその回に出した「つながっていません」の帯が
+  // まだ出ていると、新しい版の「準備ができました」と同じ位置に重なるため。
+  // このため、送れずに外した版もこの知らせの待ち受けだけは残し、
+  // 片づけ終えたところで外す。
   function onRevived() {
-    if (!isContextAlive()) retire();
+    if (isContextAlive()) return;
+    retire();
+    dismissToast();
+    document.removeEventListener(REVIVED_EVENT, onRevived);
   }
 
+  // contextmenu と click の listener を外す。帯は消さない——送れずに外す回は、
+  // 直前に出した帯をこの回だけは見せるため（消すのは onRevived）。
   function retire() {
+    retired = true;
     document.removeEventListener('contextmenu', onContextMenu, true);
     document.removeEventListener('click', onClick, true);
-    document.removeEventListener(REVIVED_EVENT, onRevived);
     clearLastContext();
+  }
+
+  function dismissToast() {
+    clearTimeout(toastTimer);
+    toastTimer = null;
+    if (toastEl) toastEl.remove();
   }
 
   document.addEventListener(REVIVED_EVENT, onRevived);

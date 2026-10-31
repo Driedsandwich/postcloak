@@ -1,6 +1,6 @@
 # プライバシーポリシー / Privacy Policy — PostCloak
 
-最終更新: 2026-08-05
+最終更新 / Last updated: 2026-10-31
 
 ---
 
@@ -14,7 +14,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 
 | | 内容 |
 |---|---|
-| **端末内で取り扱うもの** | 右クリックまたは Shift+Alt クリックした位置の周辺のハイパーリンクと、そこから取り出したポストのURL1件（投稿者のユーザー名にあたる部分を含みます）。そのポストをシークレットウィンドウで開くためだけに使います |
+| **端末内で取り扱うもの** | 右クリックまたは Shift+Alt クリックした位置の周辺のハイパーリンクと、そこから取り出したポストのURL1件（多くの場合、投稿者のユーザー名にあたる部分を含みます）。そのポストをシークレットウィンドウで開くためだけに使います |
 | **開発者・独自サーバー・解析／広告サービスが受け取るもの** | **ありません。** 独自のバックエンドを持たず、解析サービス・広告・外部APIのいずれも使っていません |
 | **拡張自身が独自に行う通信** | **ありません。** 独自の通信・計測データの送信・別サーバーへの複製を行いません（下の行の、表示先へのページ読み込みとは別です） |
 | **表示先である X が受け取るもの** | **あります。** 利用者がポストを開く操作をすると、Chrome がそのポストのURLへ通常どおりページを読み込み、**X はその通常の要求を受け取ります**。これは利用者がそのURLを自分でアドレスバーに入れて開いたときと同じで、拡張が追加の情報を付け足すことはありません |
@@ -29,7 +29,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 - 読み取るのは、その場所が属するポストのURL（`https://x.com/<利用者名>/status/<番号>`）を1つ取り出すためだけです
 - 取り出しはすべて利用者の端末内（ブラウザの中）で完結します
 - ポストの本文、画像、閲覧履歴は取り出しません
-- **ただし、取り出すURLにはそのポストの投稿者にあたる部分（`/<利用者名>/`）が含まれます。** ポストのURLを1つ取り出す以上、この部分は避けられません。これを別に取り出したり、記録したりはしません
+- **ただし、取り出すURLには、多くの場合そのポストの投稿者にあたる部分（`/<利用者名>/`）が含まれます。** `/<利用者名>/status/<番号>` の形のポストのURLを取り出す以上、この部分は避けられません（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれません）。これを別に取り出したり、記録したりはしません
 - 読み取った内容を**永続的に**保存しません（一時的な保持については §3）
 
 読み取りの範囲は上記4つのドメインに限られます。他のサイトでは動作せず、右クリックメニューにも項目が出ません（`manifest.json` の `content_scripts.matches` と `contextMenus` の `documentUrlPatterns` が、いずれもこの4つに限定されているため）。
@@ -45,22 +45,23 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 - **60秒を超えた値は使いません**（問い合わせを受けた時点で経過時間を確かめます）
 - 置いたときに仕掛けたタイマーが、**60秒後以降の最初の実行機会に参照そのものを消します**
 - それより前でも、**一度使う／ポストの外を右クリックする／別の場所を右クリックし直す／タブを閉じる**、のいずれかで捨てられます
+- ポストへのリンクの上で右クリックして直接開いた回は、控えた値を使わずに開き、**その値を消すようタブへ依頼します**。依頼が届かない場合も、上の60秒の期限とタイマー、次の右クリック、タブを閉じることで捨てられます
 - X の中で別のポストやタイムラインへ移っても、それだけでは捨てられません。X は画面を移るときにページを読み直さないためです。そのときも、上の60秒の期限とタイマーで捨てます
 
 ブラウザのタイマーは、タブが停止していたり動作が抑制されていたりすると、ちょうど60秒後に動くとは限りません。そのため「必ず60.000秒で物理的に消える」とは書きません。**確実なのは、60秒を超えた値は使わないことと、タイマーが動いた時点で参照が消えることの2つです。**
 
-ディスクにも `chrome.storage` にも書きません。同期もしません。
+拡張の処理として、ディスクにも `chrome.storage` にも書きません。同期もしません。
 
 ### 4. 要求する権限とその理由
 
 | 権限 | 用途 |
 |---|---|
 | `contextMenus` | 右クリックメニューに項目を1つ追加するため。これ以外に使いません |
-| `scripting` | **拡張のインストール・更新より前から開いていたタブに、content script を入れ直すためだけ**に使います。Chrome は既に開いているタブへ遡って content script を入れないため、これが無いとインストール直後の右クリックが何も起きずに終わります。呼ぶのはコード上1箇所（`background.js` の `reviveContentScript`）だけです |
+| `scripting` | **対象の4ドメインのページで content script と通信できなかったときに、同梱の content script をそのタブへ入れ直すためだけ**に使います。典型は、拡張のインストール・更新より前から開いていたタブです。Chrome は既に開いているタブへ遡って content script を入れないため、これが無いとインストール直後の右クリックが何も起きずに終わります。呼ぶのはコード上1箇所（`background.js` の `reviveContentScript`）だけです |
 | `host_permissions`（上記4ドメイン） | 上の `scripting` による入れ直しの対象を、この4つに限るため |
 | `content_scripts.matches`（上記4ドメイン） | ポストのURLを割り出す処理を、この4つのドメインでだけ動かすため |
 
-`tabs`（閲覧履歴の読み取り）、`storage`、`<all_urls>` は要求していません。
+`tabs`（タブの URL やタイトルを読む）、`history`（閲覧履歴）、`storage`、`<all_urls>` は要求していません。
 
 ### 5. リモートコードの実行
 
@@ -104,7 +105,7 @@ So this section separates what happens on your device from what leaves it.
 
 | | Detail |
 |---|---|
-| **Handled on your device** | The hyperlinks around the point you right-clicked or Shift+Alt clicked, and the one post URL extracted from it (its path contains the post author's username). Used solely to open that post in an Incognito window |
+| **Handled on your device** | The hyperlinks around the point you right-clicked or Shift+Alt clicked, and the one post URL extracted from it (its path usually contains the post author's username; the `/i/status/<id>` and `/i/web/status/<id>` forms do not). Used solely to open that post in an Incognito window |
 | **Received by the developer, our own backend, or any analytics/ad service** | **Nothing.** There is no backend of ours, no analytics, no ads, no external APIs |
 | **Sent by the extension on its own** | **Nothing.** No requests of its own, no telemetry, no copies sent to any other server (this is separate from the navigation in the row below) |
 | **Received by X, the destination site** | **Yes.** When you ask the extension to open a post, Chrome loads that post's URL as a normal page navigation, and **X receives that ordinary request**. It is the same request you would make by typing the URL yourself; the extension adds nothing to it |
@@ -119,7 +120,7 @@ While a page on `x.com`, `www.x.com`, `twitter.com`, or `www.twitter.com` is ope
 - The sole purpose is to extract one post URL (`https://x.com/<user>/status/<id>`) for the post that point belongs to.
 - Extraction happens locally, inside the user's browser.
 - Post text, images, and browsing history are not extracted.
-- **The URL does, however, contain a path segment identifying the post's author (`/<user>/`).** Extracting one post URL necessarily includes it. It is not extracted separately or recorded.
+- **The URL does, however, usually contain a path segment identifying the post's author (`/<user>/`).** Extracting a post URL of the form `/<user>/status/<id>` necessarily includes it (the `/i/status/<id>` and `/i/web/status/<id>` forms do not). It is not extracted separately or recorded.
 - Nothing that is read is stored **persistently** (see §3 for the temporary hold).
 
 Reading is limited to the four domains above. The extension does not run on any other site, and its context menu item does not appear there.
@@ -135,22 +136,23 @@ How that value is handled:
 - **A value older than 60 seconds is never used** (the elapsed time is checked when the menu asks for it).
 - A timer set when the value is stored **clears the reference itself at the first opportunity at or after 60 seconds**.
 - Before that, it is discarded as soon as any of these happens: **it is used once; you right-click outside a post; you right-click somewhere else; you close the tab.**
+- When you right-click a link to a post and open it directly, the held value is not used; **the extension asks the tab to discard it**. If that request does not arrive, the 60-second limit and timer above, your next right-click, or closing the tab still discard it.
 - Moving to another post or timeline within X does not discard it by itself, because X does not reload the page when you move between screens. The 60-second limit and the timer above still apply.
 
 Browser timers do not necessarily run at exactly 60 seconds — a frozen or throttled tab can delay them. So this policy does not claim the value is physically erased at exactly 60.000 seconds. **What is guaranteed is that a value older than 60 seconds is never used, and that the reference is cleared once the timer runs.**
 
-Nothing is written to disk or to `chrome.storage`, and nothing is synced.
+The extension itself writes nothing to disk or to `chrome.storage`, and syncs nothing.
 
 ### 4. Permissions and why
 
 | Permission | Purpose |
 |---|---|
 | `contextMenus` | To add one item to the right-click menu. Nothing else |
-| `scripting` | **Only** to re-inject the content script into tabs that were already open before the extension was installed or updated. Chrome does not retroactively inject content scripts, so without this the first right-click after installing does nothing. Called from exactly one place in the code (`reviveContentScript` in `background.js`) |
+| `scripting` | **Only** to re-inject the bundled content script into a tab on the four domains when the extension cannot reach it. The typical case is a tab that was already open before the extension was installed or updated: Chrome does not retroactively inject content scripts, so without this the first right-click after installing does nothing. Called from exactly one place in the code (`reviveContentScript` in `background.js`) |
 | `host_permissions` (the four domains) | To limit the re-injection above to those four domains |
 | `content_scripts.matches` (the four domains) | To run the URL resolution only on those four domains |
 
-No `tabs` (read your browsing history), no `storage`, no `<all_urls>`.
+No `tabs` (reading tab URLs and titles), no `history` (browsing history), no `storage`, no `<all_urls>`.
 
 ### 5. Remote code
 
