@@ -14,6 +14,10 @@ Chrome ウェブストアの掲載ページに載せている文面と設定を�
 ## 1. 説明（詳細）— 日本語
 
 ```
+PostCloak は、x.com のポストを、リンクになっていない本文の上からもシークレットウィンドウで
+開けるようにする拡張です。ポストを Shift+Alt クリックするか、右クリックメニューの項目を
+選ぶと、そのポストが新しいシークレットウィンドウで開きます。
+
 Chrome の「シークレット ウィンドウで開く」は、リンクの右クリックメニューの項目です。
 カーソルの下に <a> 要素があるときにしか出ません。
 
@@ -98,6 +102,10 @@ X および Twitter は X Corp. の商標です。
 > 掲載ページに英語ロケールを足すときの正本です。**拡張そのものの名前と短い説明（`manifest.json` の `name` / `description`）は、どのロケールでも日本語のままにしています**（`_locales/en/messages.json` の `extName` / `extDescription` を日本語文面に揃えてあります）。`default_locale` が `en` なので、ここを英語にすると公開中の掲載名が変わってしまうためです。メニューや通知など製品内の文言は、通常どおり英語と日本語で分かれます。
 
 ```
+PostCloak lets you open an x.com post in an Incognito window from the body text of the
+post, not only from its links. Shift+Alt click the post, or choose the item in the
+right-click menu, and the post opens in a new Incognito window.
+
 Chrome's "Open link in Incognito window" is an item in the link context menu.
 It only appears when there is an <a> element under the cursor.
 
