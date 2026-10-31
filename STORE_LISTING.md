@@ -29,6 +29,7 @@ PostCloak は、そのリンクになっていない場所からポストのURL�
 どちらも同じ結果になります。
 ポストの外（サイドバーや余白）を右クリックして選んだときは、ウィンドウは開かず、
 画面下に短い案内が出ます。Shift+Alt クリックのときは何も起きません。
+ただし、ポストの外でも、ポストへのリンク（タイムスタンプなど）の上なら、そのポストを開きます。
 
 ■ 動作する範囲
 x.com / www.x.com / twitter.com / www.twitter.com のページ上だけです。
@@ -61,7 +62,9 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 永続的な保存もしません。
 右クリック経路のURLは、そのタブのメモリに置きます。60秒を超えた値は使いません。
 置いたときのタイマーが参照を消し、それより前でも一度使う・別の場所を右クリックすると
-捨てられます。X の中で画面を移っても、それだけでは捨てられません（そのときも、60秒を
+捨てられます。ポストへのリンクの上で右クリックして開いた回は、その値を使わずに開き、
+値を消すようタブへ依頼します（依頼が届かない場合も、60秒の期限・タイマー・次の右クリック
+で捨てられます）。X の中で画面を移っても、それだけでは捨てられません（そのときも、60秒を
 超えた値は使わず、タイマーが動いた時点で参照を消します）。
 ポストを開くときは、Chrome が表示先である X へ通常の HTTPS ページ要求を行い、X はその
 URLを受け取ります。拡張は、追加の情報・識別子・計測データ・別サーバーへの複製を
@@ -97,6 +100,8 @@ PostCloak works out the post's URL from those non-link areas and opens it.
 Both do the same thing.
 Outside a post (sidebar, margins): choosing the menu item opens no window and shows a
 short notice at the bottom of the page. A Shift+Alt click there does nothing at all.
+The exception is a link to a post (such as its timestamp): even outside a post, that post
+opens.
 
 ■ Where it runs
 Only on pages of x.com / www.x.com / twitter.com / www.twitter.com.
@@ -132,7 +137,10 @@ It does not send the data to a developer-controlled backend, analytics service,
 advertising service, or external API, and it does not store it persistently.
 On the right-click path, the URL is held in that tab's memory; a value older than 60
 seconds is not used, a timer clears the reference, and it is discarded earlier if it is
-used or if you right-click elsewhere. Moving between screens within X does not discard it
+used or if you right-click elsewhere. When you right-click a link to a post and open it
+directly, the held value is not used; the extension asks the tab to discard it (if that
+request does not arrive, the 60-second limit, the timer, or your next right-click still
+discards it). Moving between screens within X does not discard it
 by itself; the 60-second limit still applies.
 To display the selected post, Chrome performs an ordinary HTTPS navigation to X, and X
 receives that URL. The extension adds no extra payload, identifier, telemetry, or copy
@@ -185,7 +193,7 @@ That is the extension's only function.
 ### `scripting`
 
 ```
-拡張のインストールまたは更新より前から開かれていたタブへ、content script を入れ直すためだけに使用します。Chrome は既存のタブへ遡って content script を注入しないため、これが無いとインストール直後の右クリックが無反応になります。コード上は background.js の reviveContentScript 関数の1箇所からのみ呼び出しており、他の用途には使用しません。
+対象の4ドメインのページで content script と通信できなかったときに、同梱の content script（post-url.js と content.js）をそのタブへ入れ直すためだけに使用します。典型は、拡張のインストールまたは更新より前から開かれていたタブです（Chrome は既存のタブへ遡って content script を注入しないため、これが無いとインストール直後の右クリックが無反応になります）。コード上は background.js の reviveContentScript 関数の1箇所からのみ呼び出しており、他の用途には使用しません。
 ```
 
 ### ホスト権限（`https://x.com/*` ほか3件）
@@ -206,7 +214,7 @@ That is the extension's only function.
 
 - 利用者が右クリックまたは Shift+Alt クリックしたとき、その位置の周辺の DOM を**端末内で読む**
 - そこからポストのURLを**1件だけ**取り出す。URLには投稿者にあたる部分（`/<利用者名>/`）が含まれる
-- 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。content.js に画面の移動を検知する処理は無いので、X の中で画面を移っても、それだけでは捨てない（そのときも、60秒を超えた値は使わず、タイマーが動いた時点で参照を消す）
+- 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。ポストへのリンクの上で右クリックして直接開く回は、控えた値を使わずに開き、値を消すようタブへ依頼する（完了は待たない。届かなければ60秒の期限・タイマー・次の右クリックが受け皿）。content.js に画面の移動を検知する処理は無いので、X の中で画面を移っても、それだけでは捨てない（そのときも、60秒を超えた値は使わず、タイマーが動いた時点で参照を消す）
 - **開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送らない**（そのいずれも実装に無い）
 - **永続保存しない**（ディスクにも `chrome.storage` にも書かない）
 - 利用者がポストを開いたときは、Chrome が**表示先である X へ通常の HTTPS ページ要求を行い、X はそのURLを受け取る**。拡張は追加の情報・識別子・計測データ・別サーバーへの複製を付けない

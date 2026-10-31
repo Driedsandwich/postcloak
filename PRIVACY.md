@@ -45,6 +45,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 - **60秒を超えた値は使いません**（問い合わせを受けた時点で経過時間を確かめます）
 - 置いたときに仕掛けたタイマーが、**60秒後以降の最初の実行機会に参照そのものを消します**
 - それより前でも、**一度使う／ポストの外を右クリックする／別の場所を右クリックし直す／タブを閉じる**、のいずれかで捨てられます
+- ポストへのリンクの上で右クリックして直接開いた回は、控えた値を使わずに開き、**その値を消すようタブへ依頼します**。依頼が届かない場合も、上の60秒の期限とタイマー、次の右クリック、タブを閉じることで捨てられます
 - X の中で別のポストやタイムラインへ移っても、それだけでは捨てられません。X は画面を移るときにページを読み直さないためです。そのときも、上の60秒の期限とタイマーで捨てます
 
 ブラウザのタイマーは、タブが停止していたり動作が抑制されていたりすると、ちょうど60秒後に動くとは限りません。そのため「必ず60.000秒で物理的に消える」とは書きません。**確実なのは、60秒を超えた値は使わないことと、タイマーが動いた時点で参照が消えることの2つです。**
@@ -56,7 +57,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 | 権限 | 用途 |
 |---|---|
 | `contextMenus` | 右クリックメニューに項目を1つ追加するため。これ以外に使いません |
-| `scripting` | **拡張のインストール・更新より前から開いていたタブに、content script を入れ直すためだけ**に使います。Chrome は既に開いているタブへ遡って content script を入れないため、これが無いとインストール直後の右クリックが何も起きずに終わります。呼ぶのはコード上1箇所（`background.js` の `reviveContentScript`）だけです |
+| `scripting` | **対象の4ドメインのページで content script と通信できなかったときに、同梱の content script をそのタブへ入れ直すためだけ**に使います。典型は、拡張のインストール・更新より前から開いていたタブです。Chrome は既に開いているタブへ遡って content script を入れないため、これが無いとインストール直後の右クリックが何も起きずに終わります。呼ぶのはコード上1箇所（`background.js` の `reviveContentScript`）だけです |
 | `host_permissions`（上記4ドメイン） | 上の `scripting` による入れ直しの対象を、この4つに限るため |
 | `content_scripts.matches`（上記4ドメイン） | ポストのURLを割り出す処理を、この4つのドメインでだけ動かすため |
 
@@ -135,6 +136,7 @@ How that value is handled:
 - **A value older than 60 seconds is never used** (the elapsed time is checked when the menu asks for it).
 - A timer set when the value is stored **clears the reference itself at the first opportunity at or after 60 seconds**.
 - Before that, it is discarded as soon as any of these happens: **it is used once; you right-click outside a post; you right-click somewhere else; you close the tab.**
+- When you right-click a link to a post and open it directly, the held value is not used; **the extension asks the tab to discard it**. If that request does not arrive, the 60-second limit and timer above, your next right-click, or closing the tab still discard it.
 - Moving to another post or timeline within X does not discard it by itself, because X does not reload the page when you move between screens. The 60-second limit and the timer above still apply.
 
 Browser timers do not necessarily run at exactly 60 seconds — a frozen or throttled tab can delay them. So this policy does not claim the value is physically erased at exactly 60.000 seconds. **What is guaranteed is that a value older than 60 seconds is never used, and that the reference is cleared once the timer runs.**
@@ -146,7 +148,7 @@ Nothing is written to disk or to `chrome.storage`, and nothing is synced.
 | Permission | Purpose |
 |---|---|
 | `contextMenus` | To add one item to the right-click menu. Nothing else |
-| `scripting` | **Only** to re-inject the content script into tabs that were already open before the extension was installed or updated. Chrome does not retroactively inject content scripts, so without this the first right-click after installing does nothing. Called from exactly one place in the code (`reviveContentScript` in `background.js`) |
+| `scripting` | **Only** to re-inject the bundled content script into a tab on the four domains when the extension cannot reach it. The typical case is a tab that was already open before the extension was installed or updated: Chrome does not retroactively inject content scripts, so without this the first right-click after installing does nothing. Called from exactly one place in the code (`reviveContentScript` in `background.js`) |
 | `host_permissions` (the four domains) | To limit the re-injection above to those four domains |
 | `content_scripts.matches` (the four domains) | To run the URL resolution only on those four domains |
 
