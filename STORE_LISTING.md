@@ -35,7 +35,7 @@ PostCloak は、そのリンクになっていない場所からポストのURL�
 右クリックの項目は囲みのポストを開き、Shift+Alt クリックには拡張は介入しません。
 ポストの外（サイドバーや余白）では、ポストへのリンク（タイムスタンプなど）の上ならそのポストを
 開きます。それ以外の所を右クリックして選んだときは、ウィンドウは開かず、画面下に短い案内が
-出ます。Shift+Alt クリックのときは、拡張は何もしません（窓も案内も出しません）。
+出ます。それ以外の所で Shift+Alt クリックしたときは、拡張は何もしません（窓も案内も出しません）。
 
 ■ 動作する範囲
 x.com / www.x.com / twitter.com / www.twitter.com のページ上だけです。
@@ -63,6 +63,7 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 　以後は開きます。新しく開いたタブや、一度読み直したタブでは起きません
 ・AltGr を押しながらのクリックには反応しません。多くの Windows の配列では AltGr が
 　Ctrl+Alt として届くので、Ctrl または Command と一緒の Shift+Alt クリックも対象外です。
+　拡張は AltGraph の状態も直接確かめています。
 　そのときは拡張は何もせず、クリックは本来の動作のままです
 ・引用つきのポストでは、引用の箱の中のリンクでない所で使うと、外側のポストが開きます
 　（引用元のタイムスタンプや画像のリンクの上なら、引用元のポストが開きます）
@@ -161,7 +162,7 @@ pro.x.com (X Pro) has a different layout and is out of scope.
 
 ■ Privacy
 This extension processes, on your device, the hyperlinks around the point you acted on
-and one selected post URL. The URL usually contains the post author's username as part of
+and one selected post URL. The URL may contain the post author's username as part of
 its path (the /i/status/ form does not), but the extension does not separately extract,
 analyze, profile, or record that username.
 It does not send the data to a developer-controlled backend, analytics service,
@@ -245,7 +246,7 @@ That is the extension's only function.
 ### 5.1 実装上の事実（コードから確定できる）
 
 - 利用者が右クリックまたは Shift+Alt クリックしたとき、その位置の周辺の DOM を**端末内で読む**
-- そこからポストのURLを**1件だけ**取り出す。URLには多くの場合、投稿者にあたる部分（`/<利用者名>/`）が含まれる（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）
+- そこからポストのURLを**1件だけ**取り出す。URLには投稿者にあたる部分（`/<利用者名>/`）が含まれることがある（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）
 - 右クリック経路では、取り出したURL1件をそのタブのメモリに置く。**60秒を超えた値は使わない**（問い合わせ時に経過時間を確かめる）。置いたときのタイマーが60秒後以降の最初の機会に**参照そのものを消す**。それより前でも、一度使う・ポストの外を右クリックする・別の場所を右クリックし直す、のいずれかで捨てる。ポストへのリンクの上で右クリックして直接開く回は、控えた値を使わずに開き、値を消すようタブへ依頼する（完了は待たない。届かなければ60秒の期限・タイマー・次の右クリックが受け皿）。content.js に画面の移動を検知する処理は無いので、X の中で画面を移っても、それだけでは捨てない（そのときも、60秒を超えた値は使わず、タイマーが動いた時点で参照を消す）
 - **開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送らない**（そのいずれも実装に無い）
 - **永続保存しない**（ディスクにも `chrome.storage` にも書かない）
@@ -265,7 +266,7 @@ That is the extension's only function.
 
 | 項目 | フォームの定義文（逐語） | コードから確定できる事実 | ダッシュボードでの判断 |
 |---|---|---|---|
-| **個人を特定できる情報** | 例: 名前、住所、メールアドレス、年齢、個人識別番号 | 取り出すポストのURLには、多くの場合**投稿者のユーザー名にあたる部分**（`/<利用者名>/`）が含まれる（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）。それを別に切り出したり記録したりはしないが、URLの一部として端末内で扱う | **チェックすることを推奨。必ずフォームで再確認する。** 公式 User Data FAQ は PII の例に *"a person's name, address, telephone number, email address, and **username**"* と**ユーザー名を明記**している。フォームの例示は「例:」で網羅ではないため、そこに無いことは除外の根拠にならない。**「URLの一部だからPIIではない」「利用者本人のユーザー名ではないからPIIではない」とはコードから断定できない** |
+| **個人を特定できる情報** | 例: 名前、住所、メールアドレス、年齢、個人識別番号 | 取り出すポストのURLには、**投稿者のユーザー名にあたる部分**（`/<利用者名>/`）が含まれることがある（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）。それを別に切り出したり記録したりはしないが、URLの一部として端末内で扱う | **チェックすることを推奨。必ずフォームで再確認する。** 公式 User Data FAQ は PII の例に *"a person's name, address, telephone number, email address, and **username**"* と**ユーザー名を明記**している。フォームの例示は「例:」で網羅ではないため、そこに無いことは除外の根拠にならない。**「URLの一部だからPIIではない」「利用者本人のユーザー名ではないからPIIではない」とはコードから断定できない** |
 | **ユーザーのアクティビティ** | 例: ネットワーク監視、クリック、マウスの位置、スクロール、キーストロークの**ロギング** | 右クリックと Shift+Alt クリックのイベント、その `target`、修飾キーの状態を**機能の入力として使う**。記録・集計・送信はせず、マウス位置・スクロール・キー入力は扱わない | **必ずフォームで再確認する。** 定義の例はいずれも「ロギング（記録・監視）」を指しており、それに当たらないと読めるが、**「保存しないから扱っていない」とはコードから断定できない** |
 | **ウェブサイトのコンテンツ** | 例: テキスト、画像、音声、動画、**ハイパーリンク** | ページ由来の**文字列として取り出すのは `href`（ハイパーリンク）だけ**（`getAttribute('href')` の2箇所）。相対URLを解くために、そのページのURL（`location.href`）を基準として使う。どのポストに属するかを判断するために、要素の種別・祖先関係・`article` と `time` を含むリンクの構造も参照する。本文・画像データ・音声・動画は取り出さない（`innerText` / `innerHTML` / `src` はいずれも0件） | **チェックする。** 定義の例に「ハイパーリンク」が名指しされており、端末内だけの処理でも開示が要る（FAQ） |
 | **ウェブ履歴** | ユーザーがアクセスしたウェブページの**リスト**およびその関連データ（ページのタイトル、アクセス時刻など） | リストを作らない。ページのタイトルもアクセス時刻も扱わない。`history` も `tabs` 権限も要求しない。扱うのは、利用者がこれから開こうとしている**1件のURL** | **必ずフォームで再確認する。** 定義の中心は「アクセスしたページのリスト」で、それには当たらないと読める |
@@ -278,7 +279,7 @@ That is the extension's only function.
 
 「ウェブサイトのコンテンツ」（および推奨どおり「個人を特定できる情報」）にチェックを入れると、掲載ページの表示が「データを収集または使用しない」から開示ありへ変わります。**これは是正です**——現状の表示は、端末内でハイパーリンクとユーザー名を含むURLを使っている実装と食い違っています。
 
-**画面の中での開示と同意（2026-10-31 に確認した論点）**: 公式の「Disclosure Requirements」（https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements ・頁の更新 2022-11-01）は「If your Product handles any user data, then prior to installation, it must: Prominently disclose what user data will be collected and how it will be used. Obtain the user's affirmative and informed consent for such use.」と書き、User Data FAQ の第10項は「The prominent disclosure and consent must occur within the Product's user interface. Disclosures in the Chrome Web Store description or inline installation page do not satisfy this requirement.」と書いている（どちらも 2026-10-31 に公式の頁を取って原文を確かめた）。3 つの頁に「目立つ機能と密接に関係しない取り扱いに限る」という限定の語は無い（2026-10-31 に数えて 0 件）。**文面の上では、端末内でハイパーリンクと URL を扱う本拡張にも当たりうる。** 推奨は、上の申告どおりに直して出し、画面の中の同意の仕組みは今は作らない（データは端末の外へ出ず、使うのは利用者がその場で選んだポストの URL 1 件だけ・審査で指摘されても直して出し直せる・同意の画面を足すとコードの変更と実機の取り直しが要る）。**審査でこの点を理由に戻されたら**、次の版（1.6.2）で、インストール直後に一度だけ開く説明の頁（扱う物・使い道・送らないこと）と同意のボタンを足して出し直す。
+**画面の中での開示と同意（2026-10-31 に確認した論点）**: 公式の「Disclosure Requirements」（https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements ・頁の更新 2022-11-01）は「If your Product handles any user data, then prior to installation, it must: Prominently disclose what user data will be collected and how it will be used. Obtain the user's affirmative and informed consent for such use.」と書き、User Data FAQ の第10項は「The prominent disclosure and consent must occur within the Product's user interface. Disclosures in the Chrome Web Store description or inline installation page do not satisfy this requirement.」と書いている（どちらも 2026-10-31 に公式の頁を取って原文を確かめた）。3 つの頁に「目立つ機能と密接に関係しない取り扱いに限る」という限定の語は無い（2026-10-31 に数えて 0 件）。**文面の上では、端末内でハイパーリンクと URL を扱う本拡張にも当たりうる。** 決め（2026-10-31・作者）は、上の申告どおりに直して出し、画面の中の同意の仕組みは今は作らない（データは端末の外へ出ず、使うのは利用者がその場で選んだポストの URL 1 件だけ・審査で指摘されても直して出し直せる・同意の画面を足すとコードの変更と実機の取り直しが要る）。**審査でこの点を理由に戻されたら**、次の版（1.6.2）で、インストール直後に一度だけ開く説明の頁（扱う物・使い道・送らないこと）と同意のボタンを足して出し直す。
 
 用途の記入欄が現れた場合は、次を貼ってください（欄が出なければ不要です）。
 

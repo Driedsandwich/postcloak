@@ -14,7 +14,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 
 | | 内容 |
 |---|---|
-| **端末内で取り扱うもの** | 右クリックまたは Shift+Alt クリックした位置の周辺のハイパーリンクと、そこから取り出したポストのURL1件（多くの場合、投稿者のユーザー名にあたる部分を含みます）。そのポストをシークレットウィンドウで開くためだけに使います |
+| **端末内で取り扱うもの** | 右クリックまたは Shift+Alt クリックした位置の周辺のハイパーリンクと、そこから取り出したポストのURL1件（投稿者のユーザー名にあたる部分を含むことがあります）。そのポストをシークレットウィンドウで開くためだけに使います |
 | **開発者・独自サーバー・解析／広告サービスが受け取るもの** | **ありません。** 独自のバックエンドを持たず、解析サービス・広告・外部APIのいずれも使っていません |
 | **拡張自身が独自に行う通信** | **ありません。** 独自の通信・計測データの送信・別サーバーへの複製を行いません（下の行の、表示先へのページ読み込みとは別です） |
 | **表示先である X が受け取るもの** | **あります。** 利用者がポストを開く操作をすると、Chrome がそのポストのURLへ通常どおりページを読み込み、**X はその通常の要求を受け取ります**。これは利用者がそのURLを自分でアドレスバーに入れて開いたときと同じで、拡張が追加の情報を付け足すことはありません |
@@ -29,7 +29,7 @@ Chrome ウェブストアのポリシーで「取り扱う（handle）」とは�
 - 読み取るのは、その場所が属するポストのURL（`https://x.com/<利用者名>/status/<番号>`）を1つ取り出すためだけです
 - 取り出しはすべて利用者の端末内（ブラウザの中）で完結します
 - ポストの本文、画像、閲覧履歴は取り出しません
-- **ただし、取り出すURLには、多くの場合そのポストの投稿者にあたる部分（`/<利用者名>/`）が含まれます。** `/<利用者名>/status/<番号>` の形のポストのURLを取り出す以上、この部分は避けられません（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれません）。これを別に取り出したり、記録したりはしません
+- **ただし、取り出すURLには、そのポストの投稿者にあたる部分（`/<利用者名>/`）が含まれることがあります。** `/<利用者名>/status/<番号>` の形のポストのURLを取り出す以上、この部分は避けられません（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれません）。これを別に取り出したり、記録したりはしません
 - 読み取った内容を**永続的に**保存しません（一時的な保持については §3）
 
 読み取りの範囲は上記4つのドメインに限られます。他のサイトでは動作せず、右クリックメニューにも項目が出ません（`manifest.json` の `content_scripts.matches` と `contextMenus` の `documentUrlPatterns` が、いずれもこの4つに限定されているため）。
@@ -105,7 +105,7 @@ So this section separates what happens on your device from what leaves it.
 
 | | Detail |
 |---|---|
-| **Handled on your device** | The hyperlinks around the point you right-clicked or Shift+Alt clicked, and the one post URL extracted from it (its path usually contains the post author's username; the `/i/status/<id>` and `/i/web/status/<id>` forms do not). Used solely to open that post in an Incognito window |
+| **Handled on your device** | The hyperlinks around the point you right-clicked or Shift+Alt clicked, and the one post URL extracted from it (its path may contain the post author's username; the `/i/status/<id>` and `/i/web/status/<id>` forms do not). Used solely to open that post in an Incognito window |
 | **Received by the developer, our own backend, or any analytics/ad service** | **Nothing.** There is no backend of ours, no analytics, no ads, no external APIs |
 | **Sent by the extension on its own** | **Nothing.** No requests of its own, no telemetry, no copies sent to any other server (this is separate from the navigation in the row below) |
 | **Received by X, the destination site** | **Yes.** When you ask the extension to open a post, Chrome loads that post's URL as a normal page navigation, and **X receives that ordinary request**. It is the same request you would make by typing the URL yourself; the extension adds nothing to it |
@@ -120,7 +120,7 @@ While a page on `x.com`, `www.x.com`, `twitter.com`, or `www.twitter.com` is ope
 - The sole purpose is to extract one post URL (`https://x.com/<user>/status/<id>`) for the post that point belongs to.
 - Extraction happens locally, inside the user's browser.
 - Post text, images, and browsing history are not extracted.
-- **The URL does, however, usually contain a path segment identifying the post's author (`/<user>/`).** Extracting a post URL of the form `/<user>/status/<id>` necessarily includes it (the `/i/status/<id>` and `/i/web/status/<id>` forms do not). It is not extracted separately or recorded.
+- **The URL may, however, contain a path segment identifying the post's author (`/<user>/`).** Extracting a post URL of the form `/<user>/status/<id>` necessarily includes it (the `/i/status/<id>` and `/i/web/status/<id>` forms do not). It is not extracted separately or recorded.
 - Nothing that is read is stored **persistently** (see §3 for the temporary hold).
 
 Reading is limited to the four domains above. The extension does not run on any other site, and its context menu item does not appear there.
