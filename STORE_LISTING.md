@@ -26,9 +26,11 @@ PostCloak は、そのリンクになっていない場所からポストのURL�
 ・ポストのどこかを Shift+Alt クリックする
 ・またはポストのどこかを右クリックして「このポストをシークレットウィンドウで開く」を選ぶ
 
-どちらも同じ結果になります。
+ポストの本文やポストへのリンクの上なら、どちらも同じ結果になります。
+ポストの中のプロフィール・外部記事・ハッシュタグのリンクの上では結果が分かれ、
+右クリックの項目は囲みのポストを開き、Shift+Alt クリックには拡張は介入しません。
 ポストの外（サイドバーや余白）を右クリックして選んだときは、ウィンドウは開かず、
-画面下に短い案内が出ます。Shift+Alt クリックのときは何も起きません。
+画面下に短い案内が出ます。Shift+Alt クリックのときは、拡張は何もしません（窓も案内も出しません）。
 ただし、ポストの外でも、ポストへのリンク（タイムスタンプなど）の上なら、そのポストを開きます。
 
 ■ 動作する範囲
@@ -50,14 +52,22 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 　この割り当ては Windows 側の設定によるもので、この拡張が原因ではありません。
 　設定画面の名称と場所は Windows の版・表示言語によって異なります。
 　右クリックメニューはこのショートカット競合の影響を受けません
-・1.6.0 から更新した直後は、更新前から開いていた x.com のタブで、最初の Shift+Alt クリックが
-　何も起こさないことがあります。そのタブを一度読み直すか、ポストを右クリックしてメニューの
-　項目を選ぶ（「準備ができました」と出ます）と、以後は開きます（この更新の最初の1回だけです）
+・1.6.0 から更新した直後は、更新前から開いていた x.com のタブでは、Shift+Alt クリックで
+　何も起きません。そのタブを一度読み直すか、ポストの本文（リンクでない所）を右クリックして
+　メニューの項目を選ぶ（「準備ができました」と出ます）と、以後は開きます。
+　この注意は、1.6.0 から更新したときに開いていたタブだけのものです
+・AltGr を押しながらのクリックには反応しません。多くの Windows の配列では AltGr が
+　Ctrl+Alt として届くので、Ctrl または Command と一緒の Shift+Alt クリックも対象外です。
+　そのときは拡張は何もせず、クリックは本来の動作のままです
+・引用つきのポストでは、引用の箱の中をクリックしても、外側のポストが開きます
+・シークレットモードが組織のポリシーなどで使えない環境では、ウィンドウは開かず、
+　通常は画面下に案内が出ます
 
 ■ プライバシー
 右クリックまたは Shift+Alt クリックした場所の周辺のハイパーリンクと、そこから取り出した
 ポストのURL1件を、利用者の端末内で処理します。URLには投稿者のユーザー名にあたる部分が
-含まれますが、ユーザー名を別の項目として抽出・分析・記録することはしません。
+含まれることがありますが（/i/status/ の形には含まれません）、ユーザー名を別の項目として
+抽出・分析・記録することはしません。
 開発者が管理するバックエンド、解析サービス、広告サービス、外部APIへは送信せず、
 永続的な保存もしません。
 右クリック経路のURLは、そのタブのメモリに置きます。60秒を超えた値は使いません。
@@ -69,7 +79,8 @@ pro.x.com（X Pro）は画面の作りが別で、対象外です。
 ポストを開くときは、Chrome が表示先である X へ通常の HTTPS ページ要求を行い、X はその
 URLを受け取ります。拡張は、追加の情報・識別子・計測データ・別サーバーへの複製を
 付けません。
-要求する権限は contextMenus と scripting の2つで、閲覧履歴を読む権限は要求しません。
+要求する権限は contextMenus と scripting の2つと、x.com / www.x.com / twitter.com /
+www.twitter.com の4つのドメインへのアクセスで、閲覧履歴を読む権限は要求しません。
 本拡張によるユーザーデータの利用は、Chrome ウェブストア ユーザーデータ ポリシー
 （Limited Use 要件を含む）に準拠します。
 
@@ -97,9 +108,12 @@ PostCloak works out the post's URL from those non-link areas and opens it.
 - Shift+Alt click anywhere on a post
 - Or right-click a post and choose "Open this post in an Incognito window"
 
-Both do the same thing.
+On the post body or on a link to a post, both do the same thing. On a profile, external
+article, or hashtag link inside a post they differ: the menu item opens the enclosing
+post, while the extension leaves a Shift+Alt click alone.
 Outside a post (sidebar, margins): choosing the menu item opens no window and shows a
-short notice at the bottom of the page. A Shift+Alt click there does nothing at all.
+short notice at the bottom of the page. On a Shift+Alt click there, the extension does
+nothing (no window, no notice).
 The exception is a link to a post (such as its timestamp): even outside a post, that post
 opens.
 
@@ -121,19 +135,23 @@ pro.x.com (X Pro) has a different layout and is out of scope.
   the operating system's language switch. That assignment comes from Windows, not from
   this extension. The setting name and location vary by Windows version and display
   language. The right-click menu is unaffected by this shortcut conflict.
-- Right after updating from 1.6.0, the first Shift+Alt click in an x.com tab that was
-  already open may do nothing. Reload that tab once, or right-click a post and choose the
-  menu item (it shows "Ready now — please try once more."); after that it opens normally.
-  This is needed only for this first update.
-- Holding AltGr while clicking does nothing. On many Windows layouts AltGr arrives as
-  Ctrl+Alt; the extension also checks the AltGraph modifier directly, so it stays quiet
-  while you type special characters.
+- Right after updating from 1.6.0, a Shift+Alt click does nothing in x.com tabs that were
+  already open. Reload that tab once, or right-click the body of a post (not a link) and
+  choose the menu item (it shows "Ready now — please try once more."); after that it
+  opens normally. This applies only to tabs that were open when you updated from 1.6.0.
+- The extension ignores clicks made while holding AltGr. On many Windows layouts AltGr
+  arrives as Ctrl+Alt, so a Shift+Alt click together with Ctrl or Command is ignored too;
+  the extension also checks the AltGraph modifier directly. In those cases it opens
+  nothing and leaves the click's normal behaviour alone.
+- In a post that quotes another post, clicking inside the quoted box opens the outer post.
+- Where Incognito mode is disabled (for example by an organization's policy), no window
+  opens, and a notice usually appears at the bottom of the page.
 
 ■ Privacy
 This extension processes, on your device, the hyperlinks around the point you acted on
-and one selected post URL. The URL contains the post author's username as part of its
-path, but the extension does not separately extract, analyze, profile, or record that
-username.
+and one selected post URL. The URL usually contains the post author's username as part of
+its path (the /i/status/ form does not), but the extension does not separately extract,
+analyze, profile, or record that username.
 It does not send the data to a developer-controlled backend, analytics service,
 advertising service, or external API, and it does not store it persistently.
 On the right-click path, the URL is held in that tab's memory; a value older than 60
@@ -146,8 +164,9 @@ by itself; the 60-second limit still applies.
 To display the selected post, Chrome performs an ordinary HTTPS navigation to X, and X
 receives that URL. The extension adds no extra payload, identifier, telemetry, or copy
 to another server.
-It requests two permissions, contextMenus and scripting, and does not request
-permission to read your browsing history.
+It requests two permissions, contextMenus and scripting, plus access to four domains
+(x.com, www.x.com, twitter.com, www.twitter.com), and does not request permission to
+read your browsing history.
 The use of user data by this extension complies with the Chrome Web Store User Data
 Policy, including the Limited Use requirements.
 
@@ -234,7 +253,7 @@ That is the extension's only function.
 
 | 項目 | フォームの定義文（逐語） | コードから確定できる事実 | ダッシュボードでの判断 |
 |---|---|---|---|
-| **個人を特定できる情報** | 例: 名前、住所、メールアドレス、年齢、個人識別番号 | 取り出すポストのURLには、**投稿者のユーザー名にあたる部分**（`/<利用者名>/`）が含まれる。それを別に切り出したり記録したりはしないが、URLの一部として端末内で扱う | **チェックすることを推奨。必ずフォームで再確認する。** 公式 User Data FAQ は PII の例に *"a person's name, address, telephone number, email address, and **username**"* と**ユーザー名を明記**している。フォームの例示は「例:」で網羅ではないため、そこに無いことは除外の根拠にならない。**「URLの一部だからPIIではない」「利用者本人のユーザー名ではないからPIIではない」とはコードから断定できない** |
+| **個人を特定できる情報** | 例: 名前、住所、メールアドレス、年齢、個人識別番号 | 取り出すポストのURLには、多くの場合**投稿者のユーザー名にあたる部分**（`/<利用者名>/`）が含まれる（`/i/status/<番号>` と `/i/web/status/<番号>` の形には含まれない）。それを別に切り出したり記録したりはしないが、URLの一部として端末内で扱う | **チェックすることを推奨。必ずフォームで再確認する。** 公式 User Data FAQ は PII の例に *"a person's name, address, telephone number, email address, and **username**"* と**ユーザー名を明記**している。フォームの例示は「例:」で網羅ではないため、そこに無いことは除外の根拠にならない。**「URLの一部だからPIIではない」「利用者本人のユーザー名ではないからPIIではない」とはコードから断定できない** |
 | **ユーザーのアクティビティ** | 例: ネットワーク監視、クリック、マウスの位置、スクロール、キーストロークの**ロギング** | 右クリックと Shift+Alt クリックのイベント、その `target`、修飾キーの状態を**機能の入力として使う**。記録・集計・送信はせず、マウス位置・スクロール・キー入力は扱わない | **必ずフォームで再確認する。** 定義の例はいずれも「ロギング（記録・監視）」を指しており、それに当たらないと読めるが、**「保存しないから扱っていない」とはコードから断定できない** |
 | **ウェブサイトのコンテンツ** | 例: テキスト、画像、音声、動画、**ハイパーリンク** | ページ由来の**文字列として取り出すのは `href`（ハイパーリンク）だけ**（`getAttribute('href')` の2箇所）。どのポストに属するかを判断するために、要素の種別・祖先関係・`article` と `time` を含むリンクの構造も参照する。本文・画像データ・音声・動画は取り出さない（`innerText` / `innerHTML` / `src` はいずれも0件） | **チェックする。** 定義の例に「ハイパーリンク」が名指しされており、端末内だけの処理でも開示が要る（FAQ） |
 | **ウェブ履歴** | ユーザーがアクセスしたウェブページの**リスト**およびその関連データ（ページのタイトル、アクセス時刻など） | リストを作らない。ページのタイトルもアクセス時刻も扱わない。`history` も `tabs` 権限も要求しない。扱うのは、利用者がこれから開こうとしている**1件のURL** | **必ずフォームで再確認する。** 定義の中心は「アクセスしたページのリスト」で、それには当たらないと読める |
@@ -250,7 +269,7 @@ That is the extension's only function.
 用途の記入欄が現れた場合は、次を貼ってください（欄が出なければ不要です）。
 
 ```
-利用者が右クリックまたは Shift+Alt クリックした位置の周辺のハイパーリンクから、そのポストのURLを1件だけ取り出すために使用します。URLには投稿者のユーザー名にあたる部分が含まれますが、ユーザー名を別の項目として抽出・分析・記録することはしません。取り出したURLは、そのポストをシークレットウィンドウで開くためだけに使い、開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送信せず、永続的な保存もしません（右クリック経路では、そのタブのメモリに置き、60秒を超えた値は使わず、タイマーで参照を消します）。ポストを開くときは、Chrome が表示先である X へ通常の HTTPS ページ要求を行い、X はそのURLを受け取ります。
+利用者が右クリックまたは Shift+Alt クリックした位置の周辺のハイパーリンクから、そのポストのURLを1件だけ取り出すために使用します。URLには投稿者のユーザー名にあたる部分が含まれることがありますが、ユーザー名を別の項目として抽出・分析・記録することはしません。取り出したURLは、そのポストをシークレットウィンドウで開くためだけに使い、開発者が管理するバックエンド・解析サービス・広告サービス・外部APIへは送信せず、永続的な保存もしません（右クリック経路では、そのタブのメモリに置き、60秒を超えた値は使わず、タイマーで参照を消します）。ポストを開くときは、Chrome が表示先である X へ通常の HTTPS ページ要求を行い、X はそのURLを受け取ります。
 ```
 
 ### 5.3 前回（2026-08-03 提出時）に申告した内容の記録
@@ -288,7 +307,8 @@ This extension only works on x.com / twitter.com.
    the post body is a <div>, not an <a>. That gap is what this extension fills.
 3. Click it. The post opens in an Incognito window.
 4. Alternatively, Shift+Alt click on the text of any post. Same result.
-5. Right-click anywhere outside a post (e.g. the sidebar) and choose the same item.
+5. Right-click an empty area outside any post (e.g. blank space in the sidebar, not on a
+   link) and choose the same item.
    → A short notice appears at the bottom of the page; no window opens.
 
 The menu item does not appear on any site other than x.com / twitter.com.
